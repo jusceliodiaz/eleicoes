@@ -137,7 +137,8 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 /* Grid de painéis */
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px;align-items:start}
-.painel{background:var(--panel);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.painel{min-width:0;background:var(--panel);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.cand>span{min-width:0;overflow-wrap:anywhere}
 .painel-head{padding:16px 18px 14px;border-left:8px solid var(--urna)}
 .painel h2{margin:0;font-size:1.25rem;font-weight:800;font-variation-settings:"wdth" 80}
 .painel h2 small{font-weight:500;color:var(--muted);font-size:.8rem;margin-left:6px;font-variation-settings:"wdth" 100}
