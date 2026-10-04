@@ -1,6 +1,6 @@
-/* Painel de apuração. Cada página define window.PAGINA = {cards:[...]} e já traz
-   o HTML dos cards (data-card="id"); este script só busca os dados e preenche. */
-const MOSTRAR = 2; // só 1º e 2º lugar em cada card
+/* Painel de apuração. A página já traz o HTML dos cards (data-card="id"); este script escolhe
+   o estado (tags ?uf=sp), busca os dados no TSE e preenche. */
+const MIN_MOSTRAR = 2; // cargos de 1 vaga mostram 1º e 2º (2º turno); os demais, uma linha por vaga
 const INTERVALO_SEG = 30;
 const $ = id => document.getElementById(id);
 
@@ -8,15 +8,54 @@ const fmtInt = n => Number(n || 0).toLocaleString("pt-BR");
 const toNum = s => typeof s === "number" ? s : parseFloat(String(s || "0").replace(/\./g,"").replace(",", ".")) || 0;
 const fmtPct = n => n.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
 
-const CARDS = window.PAGINA.cards.map(c => {
-  const root = document.querySelector(`[data-card="${c.id}"]`);
-  return {...c, el: k => root.querySelector(`[data-k="${k}"]`)};
-});
+const NOMES_UF = {
+  ac:"Acre", al:"Alagoas", am:"Amazonas", ap:"Amapá", ba:"Bahia", ce:"Ceará", df:"Distrito Federal",
+  es:"Espírito Santo", go:"Goiás", ma:"Maranhão", mg:"Minas Gerais", ms:"Mato Grosso do Sul",
+  mt:"Mato Grosso", pa:"Pará", pb:"Paraíba", pe:"Pernambuco", pi:"Piauí", pr:"Paraná",
+  rj:"Rio de Janeiro", rn:"Rio Grande do Norte", ro:"Rondônia", rr:"Roraima", rs:"Rio Grande do Sul",
+  sc:"Santa Catarina", se:"Sergipe", sp:"São Paulo", to:"Tocantins"
+};
+/* Cargo de cada card por UF. No DF a Câmara Legislativa é distrital (cargo 0008). */
+function cargoDe(id, uf){
+  return {pres: {eleicao:"6257", cargo:"0001", titulo:"Presidente"},
+          gov:  {eleicao:"6259", cargo:"0003", titulo:"Governador"},
+          sen:  {eleicao:"6259", cargo:"0005", titulo:"Senador"},
+          depf: {eleicao:"6259", cargo:"0006", titulo:"Deputado federal"},
+          depe: uf === "df" ? {eleicao:"6259", cargo:"0008", titulo:"Deputado distrital"}
+                            : {eleicao:"6259", cargo:"0007", titulo:"Deputado estadual"}}[id];
+}
+
+let UF = "br", CARDS = [], geracao = 0;
+function montarCards(){
+  const nomeLocal = UF === "br" ? "Brasil" : NOMES_UF[UF];
+  CARDS = [];
+  document.querySelectorAll("[data-card]").forEach(root => {
+    const id = root.dataset.card, ativo = UF !== "br" || id === "pres";
+    root.hidden = !ativo;
+    if (!ativo) return;
+    const c = {id, uf: UF, ...cargoDe(id, UF), el: k => root.querySelector(`[data-k="${k}"]`)};
+    c.el("titulo").textContent = c.titulo;
+    c.el("escopo").textContent = nomeLocal;
+    c.el("pct").firstChild.nodeValue = "0,00";
+    c.el("pctBar").style.width = "0%";
+    c.el("urnas").innerHTML = "";
+    c.el("atualizado").textContent = "Carregando resultados do TSE…";
+    c.el("cands").innerHTML = '<div class="vazio">Aguardando dados.</div>';
+    c.el("outros").innerHTML = "";
+    root.setAttribute("aria-label", `${c.titulo}, ${nomeLocal}`);
+    CARDS.push(c);
+  });
+  $("dicaEstado").hidden = UF !== "br";
+  $("sub").textContent = `${nomeLocal}, ao vivo`;
+  document.title = UF === "br" ? TITULO_BASE : `Apuração ${nomeLocal} 2026 ao vivo: Governador, Senador e Deputados`;
+  document.querySelectorAll("[data-uf]").forEach(a => a.dataset.uf === UF ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+}
+const TITULO_BASE = document.title;
 
 /* O TSE não envia cabeçalho CORS: no ar (Vercel) e no servidor.py, /tse/ é um proxy. */
 const BASE_TSE = location.protocol.startsWith("http") ? "/tse" : "https://resultados.tse.jus.br";
 function buildUrl(c){
-  return `${BASE_TSE}/oficial/ele2026/${c.eleicao}/dados/${c.uf}/${c.uf}${c.mun || ""}-c${c.cargo}-e${c.eleicao.padStart(6,"0")}-u.json`;
+  return `${BASE_TSE}/oficial/ele2026/${c.eleicao}/dados/${c.uf}/${c.uf}-c${c.cargo}-e${c.eleicao.padStart(6,"0")}-u.json`;
 }
 
 /* ---------- Normaliza o arquivo unificado do TSE (-u.json, formato de 2026) ---------- */
@@ -32,6 +71,7 @@ function normalize(d){
   })))));
   const s = d.s || {}, v = d.v || {}, e = d.e || {};
   return {
+    vagas: toNum(((d.carg || [])[0] || {}).nv) || 1,
     pst: toNum(s.pst),
     secoes: {total: toNum(s.ts), apuradas: toNum(s.st), faltam: toNum(s.snt)},
     quando: dataTSE(d.dg, d.hg),
@@ -92,10 +132,13 @@ function render(c, r){
     <div><b>${fmtInt(u.faltam)}</b>faltam</div>
     <div class="eta">${textoPrevisao(c, r)}</div>` : "";
   c.el("atualizado").textContent = r.hora ? `Atualizado às ${r.hora}` : "Atualizado agora";
-  const list = [...r.cands].sort((a,b)=>b.votos-a.votos).slice(0, MOSTRAR);
+  c.el("escopo").textContent = (UF === "br" ? "Brasil" : NOMES_UF[UF]) + (r.vagas > 1 ? ` · ${r.vagas} vagas` : "");
+  const list = [...r.cands].sort((a,b)=>b.votos-a.votos).slice(0, Math.max(r.vagas, MIN_MOSTRAR));
   const max = Math.max(...list.map(x=>x.pct), 1);
   const box = c.el("cands");
+  const topo = box.scrollTop;
   box.innerHTML = "";
+  box.classList.toggle("rolagem", list.length > MIN_MOSTRAR);
   list.forEach((x,i) => {
     const el = document.createElement("div");
     el.className = "cand" + (i===0 ? " lead" : "");
@@ -108,6 +151,13 @@ function render(c, r){
     el.querySelector(".partido").textContent = x.partido;
     box.appendChild(el);
   });
+  if (list.length > MIN_MOSTRAR){
+    const dica = document.createElement("div");
+    dica.className = "lista-dica";
+    dica.textContent = `Os ${list.length} mais votados (nº de vagas) · role para ver`;
+    box.prepend(dica);
+  }
+  box.scrollTop = topo;
   c.el("outros").innerHTML = [["Brancos",r.brancos],["Nulos",r.nulos],["Abstenções",r.abst]]
     .map(([n,o]) => `<div><b>${fmtPct(o.p)}%</b><span>${n}: ${fmtInt(Math.round(o.v))}</span></div>`).join("");
 }
@@ -138,10 +188,13 @@ function atualizarRelogio(){
 
 /* ---------- Loop ---------- */
 async function carregar(c){
+  const g = geracao;
   try{
     const res = await fetch(buildUrl(c) + "?t=" + Date.now(), {cache:"no-store"});
     if (!res.ok) throw new Error(res.status === 404 ? "O TSE ainda não publicou este arquivo (404)." : `O TSE respondeu com erro ${res.status}.`);
-    render(c, normalize(await res.json()));
+    const dados = await res.json();
+    if (g !== geracao) return true; // o estado mudou enquanto esperava
+    render(c, normalize(dados));
     showMsg(c, "");
     return true;
   }catch(e){
@@ -174,4 +227,21 @@ function stop(txt, kind){
   if (txt) setStatus(kind || "", txt);
 }
 $("toggle").addEventListener("click", () => timer ? stop("Pausado") : start());
-start();
+
+/* ---------- Tags de estado ---------- */
+function selecionarUF(uf, empilhar){
+  UF = NOMES_UF[uf] ? uf : "br";
+  geracao++;
+  montarCards();
+  if (empilhar) history.pushState(null, "", (UF === "br" ? "/" : `/?uf=${UF}`) + location.hash);
+  if (typeof gtag === "function") gtag("event", "escolher_estado", {uf: UF});
+  start();
+}
+document.querySelector(".estados").addEventListener("click", ev => {
+  const a = ev.target.closest("[data-uf]");
+  if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return;
+  ev.preventDefault();
+  selecionarUF(a.dataset.uf, true);
+});
+addEventListener("popstate", () => selecionarUF(new URLSearchParams(location.search).get("uf") || "br"));
+selecionarUF(new URLSearchParams(location.search).get("uf") || "br");

@@ -118,7 +118,9 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .legenda li{display:flex;align-items:center;gap:6px}
 .legenda i{width:12px;height:12px;border-radius:3px;display:inline-block}
 .barras{display:grid;gap:4px}
-.linha{display:grid;grid-template-columns:minmax(0,11rem) 1fr;align-items:center;gap:10px;padding:3px 4px;border-radius:6px;cursor:default}
+.linha{display:grid;grid-template-columns:minmax(0,11rem) 1fr;align-items:center;gap:2px 10px;padding:3px 4px;border-radius:6px;cursor:pointer}
+.g-nomes{grid-column:2;display:flex;flex-wrap:wrap;gap:0 14px;font-size:.75rem;color:var(--muted)}
+.g-dica small{opacity:.75}
 .linha:hover,.linha:focus-visible{background:var(--bg)}
 .linha .uf{font-size:.85rem;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .linha .uf small{display:block;font-weight:500;font-size:.72rem;color:var(--muted)}
@@ -143,3 +145,43 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .grafico-nota{margin:12px 0 0;font-size:.78rem;color:var(--muted)}
 .linha .sigla{display:none}
 @media (max-width:520px){.linha{grid-template-columns:4.5rem 1fr}.linha .nome-longo{display:none}.linha .sigla{display:inline}}
+
+/* Lista de candidatos com rolagem (cargos com várias vagas): mesma altura de 2 linhas */
+.cands.rolagem{max-height:8.4rem;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.dica-estado{grid-column:1/-1;margin:0;padding:14px 16px;border-radius:14px;border:1.5px dashed var(--line);color:var(--muted);font-size:.9rem}
+
+/* Tags de estado: compactas */
+.estados{gap:6px}
+.estados a{padding:5px 9px;font-size:.8rem;min-width:2.6rem;text-align:center}
+.lista-dica{position:sticky;top:0;z-index:1;background:var(--panel);padding:5px 16px;font-size:.72rem;color:var(--muted)}
+
+/* Aba de previsão */
+.previsao h2{margin-bottom:2px}
+.previsao .pv-sec{margin-top:28px;padding-top:18px;border-top:1px solid var(--line)}
+.pv-veredito{display:flex;align-items:flex-start;gap:10px;margin:12px 0 6px;padding:12px 14px;border-radius:10px;background:var(--bg);font-size:1rem}
+.pv-veredito:empty{display:none}
+.pv-chip{flex:none;font-size:.72rem;font-weight:750;text-transform:uppercase;letter-spacing:.03em;padding:3px 8px;border-radius:5px;background:var(--line);color:var(--ink)}
+.ok .pv-chip{background:var(--lead);color:var(--panel)}
+.dois .pv-chip{background:var(--serie-2);color:#fff}
+.indef .pv-chip{background:var(--urna);color:#13233A}
+.pv-legenda{display:flex;gap:16px;font-size:.8rem;color:var(--muted);margin:10px 0 6px}
+.pv-legenda i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.pv-linha{display:grid;grid-template-columns:minmax(0,12rem) 1fr 6.5rem;gap:4px 12px;align-items:center;padding:6px 0}
+.pv-nome b{display:block;font-size:.9rem}
+.pv-nome small{color:var(--muted);font-size:.75rem}
+.pv-trilho{position:relative;display:grid;gap:3px}
+.pv-barra{height:10px;border-radius:0 4px 4px 0;min-width:2px;transition:width .8s ease}
+.pv-atual{background:var(--serie-outros)}
+.pv-proj{background:var(--serie-1)}
+.pv-50{position:absolute;left:50%;top:-4px;bottom:-4px;border-left:1.5px dashed var(--ink);opacity:.5}
+.pv-num{text-align:right;font-variant-numeric:tabular-nums}
+.pv-num b{display:block;font-size:1.1rem;font-variation-settings:"wdth" 75}
+.pv-num small{color:var(--muted);font-size:.72rem}
+.pv-gov{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:8px;margin-top:12px}
+.pv-uf{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:10px;background:var(--bg);border:1.5px solid transparent}
+.pv-uf:hover{border-color:var(--line)}
+.pv-uf:focus-visible{outline:3px solid var(--urna);outline-offset:2px}
+.pv-uf-topo{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pv-uf-topo b{font-size:.92rem}
+.pv-uf-txt{font-size:.78rem;color:var(--muted);line-height:1.4}
+@media (max-width:520px){.pv-linha{grid-template-columns:1fr 5.5rem}.pv-trilho{grid-column:1/-1;grid-row:2}}

@@ -1,7 +1,7 @@
-"""Gera as páginas do painel (index.html e uma pasta por local), o sitemap.xml e o robots.txt.
+"""Gera a página do painel (index.html), o sitemap.xml e o robots.txt.
 
 Uso: python3 gerar.py
-Edite SITE, GA_ID ou a lista LOCAIS e rode de novo.
+Edite SITE, GA_ID ou ESTADOS e rode de novo.
 """
 import json, os, html
 
@@ -12,64 +12,29 @@ HOJE = "2026-10-04"
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
 # Códigos do TSE: eleição federal 6257 (Presidente) e estadual 6259 (Governador, Senador e Deputados).
-# "mun" é o código TSE do município (config/mun-e006259-cm.json).
-LOCAIS = [
-    {"slug": "", "nome": "Brasil", "tipo": "pais", "geo": (-15.7939, -47.8828),
-     "titulo": "Apuração Eleições 2026 ao vivo: resultado para Presidente no Brasil e por estado",
-     "descricao": "Apuração ao vivo das Eleições 2026 com dados oficiais do TSE: resultado para Presidente no Brasil e nos 27 estados, urnas apuradas e previsão de término. Atualiza a cada 30 segundos.",
-     "h1": "Apuração Eleições 2026", "sub": "Presidente no Brasil e nos 27 estados, ao vivo"},
-    {"slug": "parana", "nome": "Paraná", "tipo": "estado", "geo": (-25.4284, -49.2733),
-     "titulo": "Apuração Paraná 2026 ao vivo: Governador, Senador, Deputados e Presidente no PR",
-     "descricao": "Resultado da eleição 2026 no Paraná ao vivo: quem lidera para Governador, Senador, Deputado federal, Deputado estadual e Presidente no PR. Dados do TSE.",
-     "h1": "Apuração no Paraná 2026", "sub": "Votos no estado do Paraná, ao vivo"},
-    {"slug": "curitiba", "nome": "Curitiba", "mun": "75353", "geo": (-25.4284, -49.2733)},
-    {"slug": "londrina", "nome": "Londrina", "mun": "76678", "geo": (-23.3045, -51.1696)},
-    {"slug": "maringa", "nome": "Maringá", "mun": "76910", "geo": (-23.4205, -51.9333)},
-    {"slug": "ponta-grossa", "nome": "Ponta Grossa", "mun": "77771", "geo": (-25.0916, -50.1668)},
-    {"slug": "cascavel", "nome": "Cascavel", "mun": "74934", "geo": (-24.9578, -53.4595)},
-    {"slug": "sao-jose-dos-pinhais", "nome": "São José dos Pinhais", "mun": "78859", "geo": (-25.5307, -49.2063)},
-    {"slug": "foz-do-iguacu", "nome": "Foz do Iguaçu", "mun": "75639", "geo": (-25.5163, -54.5854)},
-]
-ESTADOS = ["Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal", "Espírito Santo",
-           "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul", "Minas Gerais", "Pará", "Paraíba", "Paraná",
-           "Pernambuco", "Piauí", "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia",
-           "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins"]
-
-for l in LOCAIS:
-    if "mun" in l:
-        n = l["nome"]
-        l.update(tipo="cidade",
-                 titulo=f"Apuração em {n} 2026 ao vivo: resultado da eleição",
-                 descricao=f"Resultado da eleição 2026 em {n} (PR) ao vivo: quem lidera para Presidente, Governador, Senador e Deputados em {n}. Dados oficiais do TSE.",
-                 h1=f"Apuração em {n} 2026", sub=f"Votos em {n}, Paraná, ao vivo")
-
-
-def cards(l):
-    mun = l.get("mun", "")
-    if l["tipo"] == "pais":
-        esc = {"pres": "Brasil", "gov": "Paraná", "sen": "Paraná · 2 vagas", "depf": "Paraná · 30 vagas", "depe": "Paraná · 54 vagas"}
-        pres_uf = "br"
-    else:
-        alvo = "Paraná" if l["tipo"] == "estado" else l["nome"]
-        esc = dict.fromkeys(["pres", "gov", "sen", "depf", "depe"], f"Votos em {alvo}")
-        pres_uf = "pr"
-    return [
-        {"id": "pres", "titulo": "Presidente", "escopo": esc["pres"], "eleicao": "6257", "uf": pres_uf, "mun": mun, "cargo": "0001"},
-        {"id": "gov", "titulo": "Governador", "escopo": esc["gov"], "eleicao": "6259", "uf": "pr", "mun": mun, "cargo": "0003"},
-        {"id": "sen", "titulo": "Senador", "escopo": esc["sen"], "eleicao": "6259", "uf": "pr", "mun": mun, "cargo": "0005"},
-        {"id": "depf", "titulo": "Deputado federal", "escopo": esc["depf"], "eleicao": "6259", "uf": "pr", "mun": mun, "cargo": "0006"},
-        {"id": "depe", "titulo": "Deputado estadual", "escopo": esc["depe"], "eleicao": "6259", "uf": "pr", "mun": mun, "cargo": "0007"},
-    ]
+# Uma página só: as tags trocam o estado no navegador (?uf=sp); a lista de cards e os códigos ficam em painel.js.
+PAGINA = {"slug": "", "nome": "Brasil", "geo": (-15.7939, -47.8828),
+          "titulo": "Apuração Eleições 2026 ao vivo: Presidente, Governador, Senador e Deputados por estado",
+          "descricao": "Apuração ao vivo das Eleições 2026 com dados oficiais do TSE: Presidente, Governador, Senador, Deputado federal e estadual nos 27 estados, urnas apuradas e previsão de término.",
+          "h1": "Apuração Eleições 2026", "sub": "Brasil, ao vivo"}
+ESTADOS = {"ac": "Acre", "al": "Alagoas", "ap": "Amapá", "am": "Amazonas", "ba": "Bahia", "ce": "Ceará",
+           "df": "Distrito Federal", "es": "Espírito Santo", "go": "Goiás", "ma": "Maranhão", "mt": "Mato Grosso",
+           "ms": "Mato Grosso do Sul", "mg": "Minas Gerais", "pa": "Pará", "pb": "Paraíba", "pr": "Paraná",
+           "pe": "Pernambuco", "pi": "Piauí", "rj": "Rio de Janeiro", "rn": "Rio Grande do Norte",
+           "rs": "Rio Grande do Sul", "ro": "Rondônia", "rr": "Roraima", "sc": "Santa Catarina",
+           "sp": "São Paulo", "se": "Sergipe", "to": "Tocantins"}
+CARGOS = [("pres", "Presidente"), ("gov", "Governador"), ("sen", "Senador"),
+          ("depf", "Deputado federal"), ("depe", "Deputado estadual")]
 
 
 def url(l):
     return f"{SITE}/{l['slug']}/" if l["slug"] else f"{SITE}/"
 
 
-def card_html(c):
-    return f"""    <section class="painel" data-card="{c['id']}" aria-label="{html.escape(c['titulo'])}, {html.escape(c['escopo'])}">
+def card_html(id, titulo):
+    return f"""    <section class="painel" data-card="{id}"{"" if id == "pres" else " hidden"}>
       <div class="painel-head" aria-live="polite">
-        <h2>{html.escape(c['titulo'])}<small>{html.escape(c['escopo'])}</small></h2>
+        <h2><span data-k="titulo">{titulo}</span><small data-k="escopo">Brasil</small></h2>
         <div class="pct" data-k="pct">0,00<small>% das seções apuradas</small></div>
         <div class="track"><div class="fill" data-k="pctBar" style="width:0%"></div></div>
         <div class="urnas" data-k="urnas"></div>
@@ -83,22 +48,14 @@ def card_html(c):
 
 
 def json_ld(l):
-    lugar = ({"@type": "Country", "name": "Brasil"} if l["tipo"] == "pais"
-             else {"@type": "State", "name": "Paraná", "containedInPlace": {"@type": "Country", "name": "Brasil"}} if l["tipo"] == "estado"
-             else {"@type": "City", "name": l["nome"], "containedInPlace": {"@type": "State", "name": "Paraná"}})
-    migalhas = [{"@type": "ListItem", "position": 1, "name": "Eleições 2026", "item": f"{SITE}/"}]
-    if l["tipo"] != "pais":
-        migalhas.append({"@type": "ListItem", "position": 2, "name": "Paraná", "item": f"{SITE}/parana/"})
-    if l["tipo"] == "cidade":
-        migalhas.append({"@type": "ListItem", "position": 3, "name": l["nome"], "item": url(l)})
     dados = {
         "@context": "https://schema.org",
         "@graph": [
             {"@type": "WebSite", "@id": f"{SITE}/#site", "url": f"{SITE}/", "name": "Apuração Eleições 2026", "inLanguage": "pt-BR"},
             {"@type": "WebPage", "@id": f"{url(l)}#pagina", "url": url(l), "name": l["titulo"], "description": l["descricao"],
              "inLanguage": "pt-BR", "isPartOf": {"@id": f"{SITE}/#site"}, "about": {"@id": f"{SITE}/#eleicao"},
-             "primaryImageOfPage": f"{SITE}/og-image.png", "dateModified": HOJE, "spatialCoverage": lugar},
-            {"@type": "BreadcrumbList", "itemListElement": migalhas},
+             "primaryImageOfPage": f"{SITE}/og-image.png", "dateModified": HOJE,
+             "spatialCoverage": {"@type": "Country", "name": "Brasil"}},
             {"@type": "Event", "@id": f"{SITE}/#eleicao", "name": "Eleições Gerais 2026 – 1º turno",
              "startDate": "2026-10-04T08:00:00-03:00", "endDate": "2026-10-04T17:00:00-03:00",
              "eventStatus": "https://schema.org/EventScheduled",
@@ -122,24 +79,18 @@ def analytics():
 def pagina(l):
     e = html.escape
     lat, lon = l["geo"]
-    regiao = "BR" if l["tipo"] == "pais" else "BR-PR"
-    lugar_geo = {"pais": "Brasil", "estado": "Curitiba"}.get(l["tipo"], l["nome"])
-    if l["tipo"] == "pais":
-        palavras = ("apuração 2026, eleições 2026, apuração ao vivo, resultado eleição 2026, apuração presidente 2026, "
-                    "presidente por estado, resultado presidente por estado, TSE ao vivo, urnas apuradas, "
-                    + ", ".join(f"apuração {n}" for n in ESTADOS))
-    else:
-        palavras = (f"apuração 2026, eleições 2026, resultado eleição {l['nome']}, apuração {l['nome']}, apuração Paraná, "
-                    "apuração Curitiba, governador Paraná 2026, senador Paraná 2026, deputado federal Paraná, deputado estadual Paraná, "
-                    "presidente 2026, presidente por estado, TSE ao vivo")
-    linhas_estados = "".join(f"<tr><td>{n}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>" for n in ESTADOS)
-    cs = cards(l)
-    atual = ' aria-current="page"'
-    nav = "\n".join(
-        f'      <li><a href="/{o["slug"] + "/" if o["slug"] else ""}"{atual if o is l else ""}>{e(o["nome"])}</a></li>'
-        for o in LOCAIS)
-    corpo = "".join(card_html(c) for c in cs)
-    config = json.dumps({"cards": [{k: c[k] for k in ("id", "eleicao", "uf", "mun", "cargo")} for c in cs]})
+    nomes = list(ESTADOS.values())
+    palavras = ("apuração 2026, eleições 2026, apuração ao vivo, resultado eleição 2026, apuração presidente 2026, "
+                "governador 2026, senador 2026, deputado federal 2026, deputado estadual 2026, resultado por estado, "
+                "TSE ao vivo, urnas apuradas, " + ", ".join(f"apuração {n}" for n in nomes))
+    linhas_estados = "".join(f"<tr><td>{n}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>" for n in sorted(nomes))
+    nav = "\n".join(['      <li><a href="/" data-uf="br" aria-current="page">Brasil</a></li>'] + [
+        f'      <li><a href="/?uf={uf}" data-uf="{uf}" title="{e(n)}" aria-label="{e(n)}">{uf.upper()}</a></li>'
+        for uf, n in sorted(ESTADOS.items())])
+    corpo = "".join(card_html(id, t) for id, t in CARGOS) + """    <p class="dica-estado" id="dicaEstado">Escolha um estado acima para ver Governador, Senador e Deputados.</p>
+"""
+    opcoes_cargo = "".join(f'<option value="{id}">{t}</option>' for id, t in CARGOS)
+    lista_estados = ", ".join(nomes[:-1]) + " e " + nomes[-1]
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -156,8 +107,8 @@ def pagina(l):
 <link rel="alternate" hreflang="pt-BR" href="{url(l)}">
 <link rel="alternate" hreflang="x-default" href="{url(l)}">
 
-<meta name="geo.region" content="{regiao}">
-<meta name="geo.placename" content="{e(lugar_geo)}">
+<meta name="geo.region" content="BR">
+<meta name="geo.placename" content="Brasil">
 <meta name="geo.position" content="{lat};{lon}">
 <meta name="ICBM" content="{lat}, {lon}">
 <meta name="language" content="pt-BR">
@@ -191,15 +142,15 @@ def pagina(l):
 <body>
 <div class="wrap">
   <header>
-    <h1>{e(l['h1'])} <span class="h1-sub">{e(l['sub'])}</span></h1>
+    <h1>{e(l['h1'])} <span class="h1-sub" id="sub">{e(l['sub'])}</span></h1>
     <div class="controls">
       <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Carregando</span></div>
       <button class="primary" id="toggle">Pausar</button>
     </div>
   </header>
 
-  <nav aria-label="Apuração por local">
-    <ul class="locais">
+  <nav aria-label="Apuração por estado">
+    <ul class="locais estados">
 {nav}
     </ul>
   </nav>
@@ -215,7 +166,8 @@ def pagina(l):
 
   <div class="abas" role="tablist" aria-label="Visualização">
     <button role="tab" id="tab-painel" aria-controls="aba-painel" aria-selected="true">Painel</button>
-    <button role="tab" id="tab-grafico" aria-controls="aba-grafico" aria-selected="false" tabindex="-1">Presidente por estado</button>
+    <button role="tab" id="tab-grafico" aria-controls="aba-grafico" aria-selected="false" tabindex="-1">Por estado</button>
+    <button role="tab" id="tab-previsao" aria-controls="aba-previsao" aria-selected="false" tabindex="-1">Previsão 1º e 2º turno</button>
   </div>
 
   <main class="grid" id="aba-painel" role="tabpanel" aria-labelledby="tab-painel">
@@ -224,9 +176,12 @@ def pagina(l):
   <section class="grafico" id="aba-grafico" role="tabpanel" aria-labelledby="tab-grafico" hidden>
     <div class="grafico-topo">
       <div>
-        <h2>Presidente por estado</h2>
+        <h2 id="gTitulo">Presidente por estado</h2>
         <p class="grafico-sub" id="gResumo">Carregando resultados dos 27 estados…</p>
       </div>
+      <label class="ordem">Cargo
+        <select id="gCargo">{opcoes_cargo}</select>
+      </label>
       <label class="ordem">Ordenar por
         <select id="gOrdem">
           <option value="vantagem">Vantagem do 1º colocado</option>
@@ -240,36 +195,44 @@ def pagina(l):
     <div class="g-dica" id="gDica" role="tooltip" hidden></div>
     <details class="g-tabela">
       <summary>Ver como tabela</summary>
-      <div class="g-tabela-rolagem"><table id="gTabela"><thead><tr><th>Estado</th><th>% apurado</th><th>1º no Brasil</th><th>2º no Brasil</th><th>Outros</th></tr></thead><tbody>{linhas_estados}</tbody></table></div>
+      <div class="g-tabela-rolagem"><table id="gTabela"><thead><tr><th>Estado</th><th>% apurado</th><th>1º</th><th>2º</th><th>Outros</th></tr></thead><tbody>{linhas_estados}</tbody></table></div>
     </details>
-    <p class="grafico-nota">Resultado da eleição para Presidente em todos os estados do Brasil: {", ".join(ESTADOS[:-1])} e {ESTADOS[-1]}. Percentuais sobre os votos válidos em cada estado. Dados oficiais do TSE, atualizados a cada minuto enquanto esta aba está aberta.</p>
+    <p class="grafico-nota">Resultado da eleição para Presidente, Governador, Senador e Deputados em todos os estados do Brasil: {lista_estados}. Percentuais sobre os votos válidos em cada estado. Clique num estado para abrir o painel dele. Dados oficiais do TSE, atualizados a cada minuto enquanto esta aba está aberta.</p>
+  </section>
+
+  <section class="grafico previsao" id="aba-previsao" role="tabpanel" aria-labelledby="tab-previsao" hidden>
+    <h2>Presidente: projeção do resultado final</h2>
+    <p class="grafico-sub" id="pvPresResumo">Carregando resultados dos 27 estados…</p>
+    <div class="pv-veredito" id="pvPresVeredito" aria-live="polite"></div>
+    <div class="pv-barras" id="pvPresBarras"></div>
+    <p class="grafico-nota">Como calculamos: em cada estado, os votos que faltam apurar são distribuídos na mesma proporção dos votos já apurados naquele estado, e somamos o resultado do país (sem o exterior). Isso corrige o fato de alguns estados apurarem mais rápido que outros. É uma tendência, não um resultado oficial.</p>
+
+    <h2 class="pv-sec">Governador: 1º ou 2º turno?</h2>
+    <p class="grafico-sub" id="pvGovResumo">Carregando…</p>
+    <div class="pv-gov" id="pvGovLista"></div>
+    <p class="grafico-nota">Vence no 1º turno quem tiver mais de 50% dos votos válidos. Com pouca apuração, uma margem pequena sobre 50% ainda pode virar, por isso marcamos como “indefinido”. O 2º turno será em 25 de outubro de 2026. Senado e deputados não têm 2º turno.</p>
   </section>
 
   <noscript><p class="rodape">Ative o JavaScript para ver a apuração ao vivo.</p></noscript>
 </div>
 
-<script>window.PAGINA = {config};</script>
 <script src="/assets/painel.js"></script>
 <script src="/assets/grafico.js"></script>
+<script src="/assets/previsao.js"></script>
 </body>
 </html>
 """
 
 
-for l in LOCAIS:
-    pasta = os.path.join(AQUI, l["slug"])
-    os.makedirs(pasta, exist_ok=True)
-    with open(os.path.join(pasta, "index.html"), "w", encoding="utf-8") as f:
-        f.write(pagina(l))
+with open(os.path.join(AQUI, "index.html"), "w", encoding="utf-8") as f:
+    f.write(pagina(PAGINA))
 
 with open(os.path.join(AQUI, "sitemap.xml"), "w", encoding="utf-8") as f:
-    f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
-    for l in LOCAIS:
-        f.write(f"  <url>\n    <loc>{url(l)}</loc>\n    <lastmod>{HOJE}</lastmod>\n    <changefreq>always</changefreq>\n"
-                f"    <priority>{'1.0' if not l['slug'] else '0.9' if l['tipo'] == 'estado' else '0.8'}</priority>\n  </url>\n")
-    f.write("</urlset>\n")
+    f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            f"  <url>\n    <loc>{url(PAGINA)}</loc>\n    <lastmod>{HOJE}</lastmod>\n    <changefreq>always</changefreq>\n"
+            "    <priority>1.0</priority>\n  </url>\n</urlset>\n")
 
 with open(os.path.join(AQUI, "robots.txt"), "w", encoding="utf-8") as f:
     f.write(f"User-agent: *\nAllow: /\nDisallow: /tse/\n\nSitemap: {SITE}/sitemap.xml\n")
 
-print(f"{len(LOCAIS)} páginas geradas" + ("" if GA_ID else " (sem Google Analytics: preencha GA_ID)"))
+print("index.html gerado" + ("" if GA_ID else " (sem Google Analytics: preencha GA_ID)"))
