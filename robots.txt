@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /tse/
 
-Sitemap: https://jusceliodiaz.github.io/eleicoes/sitemap.xml
+Sitemap: https://eleicoesbrasil.vercel.app/sitemap.xml

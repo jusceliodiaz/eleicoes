@@ -1,12 +1,21 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/tse/:path*", "destination": "https://resultados.tse.jus.br/:path*" }
+    {
+      "source": "/tse/:path*",
+      "destination": "https://resultados.tse.jus.br/:path*"
+    }
   ],
   "headers": [
     {
       "source": "/tse/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, s-maxage=15" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=15"
+        }
+      ]
     }
-  ]
+  ],
+  "trailingSlash": true
 }
