@@ -49,7 +49,7 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 @media (max-width:520px){.contador .sep{display:none}}
 
 /* Grid de painéis */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr));gap:18px;align-items:start}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px;align-items:start}
 .painel{background:var(--panel);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
 .painel-head{padding:16px 18px 14px;border-left:8px solid var(--urna)}
 .painel h2{margin:0;font-size:1.25rem;font-weight:800;font-variation-settings:"wdth" 80}
@@ -61,7 +61,6 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .meta{margin-top:8px;font-size:.82rem;color:var(--muted)}
 
 .cands{display:grid;gap:1px;background:var(--line);border-top:1px solid var(--line)}
-.cands.longa{max-height:560px;overflow-y:auto}
 .cand{background:var(--panel);padding:10px 16px;display:grid;grid-template-columns:2.2rem 1fr auto;gap:3px 12px;align-items:center}
 .cand .pos{font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;grid-row:span 2}
 .cand .nome{font-weight:700}
@@ -79,16 +78,9 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .outros div+div{border-left:1px solid var(--line)}
 .outros b{display:block;font-size:1.1rem;font-variation-settings:"wdth" 75;font-variant-numeric:tabular-nums}
 .outros span{font-size:.8rem;color:var(--muted)}
-.nota{margin:0;padding:10px 16px 14px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line)}
-.nota:empty{display:none}
 .msg{padding:10px 16px;border-top:1px solid var(--line);border-left:5px solid var(--err);font-size:.85rem;display:none}
 
-details{margin-top:28px;font-size:.9rem;color:var(--muted);max-width:900px}
-details summary{cursor:pointer;font-weight:650;color:var(--ink)}
-details label{display:block;margin-top:10px}
-details input{width:100%;margin-top:4px}
-code{font-size:.85em;word-break:break-all}
-#urlPreview{display:block;margin-top:4px}
+.rodape{margin-top:24px;font-size:.82rem;color:var(--muted)}
 @media (max-width:520px){.cand .num{font-size:1.1rem}}
 </style>
 </head>
@@ -99,8 +91,8 @@ code{font-size:.85em;word-break:break-all}
     <div class="controls">
       <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Parado</span></div>
       <select id="modo" aria-label="Fonte dos dados">
-        <option value="demo">Demonstração</option>
         <option value="live">Ao vivo (TSE)</option>
+        <option value="demo">Demonstração</option>
       </select>
       <button class="primary" id="toggle">Iniciar</button>
     </div>
@@ -117,30 +109,20 @@ code{font-size:.85em;word-break:break-all}
 
   <main class="grid" id="grid"></main>
 
-  <details>
-    <summary>Configurar fonte ao vivo</summary>
-    <p>O painel lê os arquivos JSON públicos do TSE. O código da eleição muda a cada pleito: confira o de 2026 abrindo resultados.tse.jus.br com o DevTools (aba Network) e copiando o número que aparece no endereço dos arquivos <code>-r.json</code>.</p>
-    <label>Código da eleição (1º turno)
-      <input id="eleicao" value="" placeholder="ex.: 544 (código de 2022)">
-    </label>
-    <label>Ano no caminho
-      <input id="ano" value="ele2026">
-    </label>
-    <label>Atualizar a cada (segundos)
-      <input id="intervalo" type="number" min="15" value="30">
-    </label>
-    <p>URLs geradas: <span id="urlPreview">—</span></p>
-  </details>
+  <p class="rodape">Fonte: arquivos públicos de resultados.tse.jus.br. Atualiza a cada 30 segundos.</p>
 </div>
 
 <script>
-/* Disputas acompanhadas. Em 2026 o Senado renova 2/3: duas vagas por estado. */
+/* Disputas acompanhadas. Em 2026 o TSE separa a eleição federal (6257, Presidente)
+   da estadual (6259, Senador e Deputados). Em 2026 o Senado renova 2/3: duas vagas por estado. */
 const CORRIDAS = [
-  {id:"pres", titulo:"Presidente",         escopo:"Brasil",            uf:"br", cargo:"0001", vagas:1,  eleitorado:156e6},
-  {id:"sen",  titulo:"Senador",            escopo:"Paraná · 2 vagas",  uf:"pr", cargo:"0005", vagas:2,  eleitorado:8.6e6},
-  {id:"depf", titulo:"Deputado federal",   escopo:"Paraná · 30 vagas", uf:"pr", cargo:"0006", vagas:30, eleitorado:8.6e6, proporcional:true},
-  {id:"depe", titulo:"Deputado estadual",  escopo:"Paraná · 54 vagas", uf:"pr", cargo:"0007", vagas:54, eleitorado:8.6e6, proporcional:true}
+  {id:"pres", titulo:"Presidente",         escopo:"Brasil",            eleicao:"6257", uf:"br", cargo:"0001", vagas:1,  eleitorado:156e6},
+  {id:"sen",  titulo:"Senador",            escopo:"Paraná · 2 vagas",  eleicao:"6259", uf:"pr", cargo:"0005", vagas:2,  eleitorado:8.6e6},
+  {id:"depf", titulo:"Deputado federal",   escopo:"Paraná · 30 vagas", eleicao:"6259", uf:"pr", cargo:"0006", vagas:30, eleitorado:8.6e6},
+  {id:"depe", titulo:"Deputado estadual",  escopo:"Paraná · 54 vagas", eleicao:"6259", uf:"pr", cargo:"0007", vagas:54, eleitorado:8.6e6}
 ];
+const MOSTRAR = 2; // só 1º e 2º lugar em cada card
+const INTERVALO_SEG = 30;
 const $ = id => document.getElementById(id);
 
 const fmtInt = n => Number(n || 0).toLocaleString("pt-BR");
@@ -160,46 +142,38 @@ CORRIDAS.forEach(c => {
       <div class="meta" data-k="atualizado">Sem dados ainda</div>
     </div>
     <div class="msg" data-k="msg" role="alert"></div>
-    <div class="cands${c.proporcional ? " longa" : ""}" data-k="cands"><div class="vazio">Aguardando dados.</div></div>
-    <div class="outros" data-k="outros"></div>
-    <p class="nota" data-k="nota"></p>`;
+    <div class="cands" data-k="cands"><div class="vazio">Aguardando dados.</div></div>
+    <div class="outros" data-k="outros"></div>`;
   c.el = k => el.querySelector(`[data-k="${k}"]`);
   $("grid").appendChild(el);
 });
 
+/* O TSE não envia cabeçalho CORS: aberto via servidor.py, as requisições passam pelo proxy local /tse/. */
+const BASE_TSE = location.protocol.startsWith("http") ? "/tse" : "https://resultados.tse.jus.br";
 function buildUrl(c){
-  const ele = $("eleicao").value.trim();
-  const ano = $("ano").value.trim() || "ele2026";
-  if (!ele) return null;
-  const e = ele.padStart(6, "0");
-  return `https://resultados.tse.jus.br/oficial/${ano}/${ele}/dados-simplificados/${c.uf}/${c.uf}-c${c.cargo}-e${e}-r.json`;
+  return `${BASE_TSE}/oficial/ele2026/${c.eleicao}/dados/${c.uf}/${c.uf}-c${c.cargo}-e${c.eleicao.padStart(6,"0")}-u.json`;
 }
-function refreshPreview(){
-  $("urlPreview").innerHTML = "";
-  if (!$("eleicao").value.trim()){ $("urlPreview").textContent = "preencha o código da eleição"; return; }
-  CORRIDAS.forEach(c => { const k = document.createElement("code"); k.textContent = buildUrl(c); $("urlPreview").appendChild(k); });
-}
-["eleicao","ano"].forEach(id => $(id).addEventListener("input", refreshPreview));
-refreshPreview();
 
-/* ---------- Normaliza o JSON do TSE (formato de 2022, lido de forma tolerante) ---------- */
+/* ---------- Normaliza o arquivo unificado do TSE (-u.json, formato de 2026) ---------- */
 function normalize(d){
-  const cands = (d.cand || []).map(c => ({
-    nome: c.nm || c.nmu || "Sem nome",
-    partido: c.cc || c.sgp || "",
+  const cands = [];
+  (d.carg || []).forEach(cg => (cg.agr || []).forEach(ag => (ag.par || []).forEach(pa => (pa.cand || []).forEach(c => cands.push({
+    nome: c.nmu || c.nm || "Sem nome",
+    partido: pa.sg || "",
     numero: c.n || "",
     votos: toNum(c.vap),
     pct: toNum(c.pvap),
-    eleito: (c.e === "s" || /^eleito/i.test(c.st || "")),
+    eleito: (c.e === "s" || /^eleit/i.test(c.st || "")),
     segundo: /2º turno/i.test(c.st || "")
-  }));
+  })))));
+  const s = d.s || {}, v = d.v || {}, e = d.e || {};
   return {
-    pst: toNum(d.pst),
+    pst: toNum(s.pst),
     cands,
-    brancos: {v: toNum(d.vb), p: toNum(d.pvb)},
-    nulos: {v: toNum(d.tvn ?? d.vn), p: toNum(d.ptvn ?? d.pvn)},
-    abst: {v: toNum(d.a), p: toNum(d.pa)},
-    hora: d.hg ? `${d.dg || ""} ${d.hg}`.trim() : (d.ht ? `${d.dt || ""} ${d.ht}`.trim() : null)
+    brancos: {v: toNum(v.vb), p: toNum(v.pvb)},
+    nulos: {v: toNum(v.tvn), p: toNum(v.ptvn)},
+    abst: {v: toNum(e.a), p: toNum(e.pa)},
+    hora: d.hg ? `${d.dg || ""} ${d.hg}`.trim() : null
   };
 }
 
@@ -260,8 +234,7 @@ function render(c, r){
   c.el("pct").firstChild.nodeValue = fmtPct(r.pst);
   c.el("pctBar").style.width = r.pst + "%";
   c.el("atualizado").textContent = r.hora ? `Atualizado às ${r.hora}` : "Atualizado agora";
-  const todos = [...r.cands].sort((a,b)=>b.votos-a.votos);
-  const list = c.proporcional ? todos.slice(0, c.vagas) : todos;
+  const list = [...r.cands].sort((a,b)=>b.votos-a.votos).slice(0, MOSTRAR);
   const max = Math.max(...list.map(x=>x.pct), 1);
   const box = c.el("cands");
   box.innerHTML = "";
@@ -279,9 +252,6 @@ function render(c, r){
   });
   c.el("outros").innerHTML = [["Brancos",r.brancos],["Nulos",r.nulos],["Abstenções",r.abst]]
     .map(([n,o]) => `<div><b>${fmtPct(o.p)}%</b><span>${n}: ${fmtInt(Math.round(o.v))}</span></div>`).join("");
-  c.el("nota").textContent = c.proporcional
-    ? `Mostrando os ${list.length} mais votados de ${fmtInt(todos.length)} candidatos. Nas eleições proporcionais, as vagas dependem também do quociente partidário: ser um dos mais votados não garante a eleição.`
-    : "";
 }
 function showMsg(c, t){ const m = c.el("msg"); m.textContent = t || ""; m.style.display = t ? "block" : "none"; }
 function setStatus(kind, txt){ $("dot").className = "dot " + kind; $("statusTxt").textContent = txt; }
@@ -313,13 +283,13 @@ let timer = null;
 async function carregar(c){
   try{
     const res = await fetch(buildUrl(c) + "?t=" + Date.now(), {cache:"no-store"});
-    if (!res.ok) throw new Error(res.status === 404 ? "Arquivo não encontrado (404). Confira o código da eleição." : `O TSE respondeu com erro ${res.status}.`);
+    if (!res.ok) throw new Error(res.status === 404 ? "O TSE ainda não publicou este arquivo (404)." : `O TSE respondeu com erro ${res.status}.`);
     render(c, normalize(await res.json()));
     showMsg(c, "");
     return true;
   }catch(e){
     showMsg(c, e.message.includes("Failed to fetch") || e.name === "TypeError"
-      ? "O navegador não conseguiu ler o arquivo do TSE. Abra este painel por um servidor local ou use um proxy."
+      ? "O navegador não conseguiu ler o arquivo do TSE. Rode “python3 servidor.py” e abra http://localhost:8000."
       : e.message);
     return false;
   }
@@ -333,11 +303,6 @@ async function tick(){
     if (CORRIDAS.every(c => c.demoProg >= 100)) stop("Apuração concluída (demo)");
     return;
   }
-  if (!$("eleicao").value.trim()){
-    CORRIDAS.forEach(c => showMsg(c, "Informe o código da eleição em “Configurar fonte ao vivo” para usar os dados do TSE."));
-    stop("Aguardando configuração", "err");
-    return;
-  }
   const oks = await Promise.all(CORRIDAS.map(carregar));
   oks.every(Boolean) ? setStatus("live","Ao vivo")
     : oks.some(Boolean) ? setStatus("err","Falha em parte dos painéis")
@@ -346,7 +311,7 @@ async function tick(){
 function start(){
   stop(); totalAtual = 0; historico = [];
   CORRIDAS.forEach(prepararDemo);
-  intervaloSeg = $("modo").value === "demo" ? 2 : Math.max(15, +$("intervalo").value || 30);
+  intervaloSeg = $("modo").value === "demo" ? 2 : INTERVALO_SEG;
   timer = setInterval(tick, intervaloSeg*1000);
   relogio = setInterval(atualizarRelogio, 250);
   $("toggle").textContent = "Parar";
@@ -361,6 +326,7 @@ function stop(txt, kind){
 }
 $("toggle").addEventListener("click", () => timer ? stop("Parado") : start());
 $("modo").addEventListener("change", () => { if (timer) start(); });
+start();
 </script>
 </body>
 </html>
