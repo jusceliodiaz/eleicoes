@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel de apuração</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9EEF2; --panel:#FFFFFF; --ink:#13233A; --muted:#5B6B7F; --line:#CBD5DF;
+  --urna:#F2B705; --lead:#0B7A4B; --bar:#2F4A6D; --err:#B3261E;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1A28; --panel:#172536; --ink:#E8EEF5; --muted:#93A3B6; --line:#2A3B50;
+  --urna:#F5C431; --lead:#3CC489; --bar:#6E8DB5; --err:#F2867E;}}
+:root[data-theme="dark"]{--bg:#0F1A28; --panel:#172536; --ink:#E8EEF5; --muted:#93A3B6; --line:#2A3B50;
+  --urna:#F5C431; --lead:#3CC489; --bar:#6E8DB5; --err:#F2867E;}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variation-settings:"wdth" 100;line-height:1.45}
+.wrap{max-width:1500px;margin:0 auto;padding:24px 18px 48px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px 20px;flex-wrap:wrap}
+h1{font-size:clamp(1.6rem,3vw,2.4rem);font-variation-settings:"wdth" 75;font-weight:850;letter-spacing:-.01em;margin:0}
+.status{font-size:.9rem;color:var(--muted);display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.dot.live{background:var(--lead);animation:pulse 2s infinite}
+.dot.err{background:var(--err)}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.dot.live{animation:none}.fill{transition:none!important}}
+
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+select,input,button{font:inherit;font-size:.95rem;color:var(--ink);background:var(--panel);border:1.5px solid var(--line);border-radius:8px;padding:8px 10px}
+button{cursor:pointer;font-weight:650}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+:focus-visible{outline:3px solid var(--urna);outline-offset:2px}
+
+.contador{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:16px 0 20px;font-size:.88rem;color:var(--muted)}
+.contador b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:750}
+.contador .sep{width:1px;height:14px;background:var(--line)}
+.ring{width:22px;height:22px;display:inline-block}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:4}
+.ring-bg{stroke:var(--line)}
+.ring-fg{stroke:var(--urna);stroke-dasharray:94.25;stroke-dashoffset:94.25;transition:stroke-dashoffset .9s linear}
+@media (prefers-reduced-motion:reduce){.ring-fg{transition:none}}
+@media (max-width:520px){.contador .sep{display:none}}
+
+/* Grid de painéis */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr));gap:18px;align-items:start}
+.painel{background:var(--panel);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.painel-head{padding:16px 18px 14px;border-left:8px solid var(--urna)}
+.painel h2{margin:0;font-size:1.25rem;font-weight:800;font-variation-settings:"wdth" 80}
+.painel h2 small{font-weight:500;color:var(--muted);font-size:.8rem;margin-left:6px;font-variation-settings:"wdth" 100}
+.pct{font-size:clamp(2.4rem,5vw,3.6rem);font-weight:900;font-variation-settings:"wdth" 62;line-height:.95;font-variant-numeric:tabular-nums;margin-top:8px}
+.pct small{font-size:.32em;font-weight:600;color:var(--muted);font-variation-settings:"wdth" 100;margin-left:6px}
+.track{height:10px;background:var(--line);border-radius:5px;margin-top:10px;overflow:hidden}
+.track .fill{height:100%;background:var(--urna);transition:width .8s ease}
+.meta{margin-top:8px;font-size:.82rem;color:var(--muted)}
+
+.cands{display:grid;gap:1px;background:var(--line);border-top:1px solid var(--line)}
+.cands.longa{max-height:560px;overflow-y:auto}
+.cand{background:var(--panel);padding:10px 16px;display:grid;grid-template-columns:2.2rem 1fr auto;gap:3px 12px;align-items:center}
+.cand .pos{font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;grid-row:span 2}
+.cand .nome{font-weight:700}
+.cand .partido{color:var(--muted);font-weight:500;font-size:.85rem;margin-left:6px}
+.cand .num{text-align:right;font-weight:850;font-size:1.3rem;font-variation-settings:"wdth" 70;font-variant-numeric:tabular-nums;grid-row:span 2}
+.cand .votos{display:block;font-size:.75rem;font-weight:500;color:var(--muted);font-variation-settings:"wdth" 100}
+.cand .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.cand .bar .fill{height:100%;background:var(--bar);transition:width .8s ease}
+.cand.lead .bar .fill{background:var(--lead)}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:5px;margin-left:6px;vertical-align:2px;background:var(--lead);color:var(--panel)}
+.vazio{background:var(--panel);padding:18px;color:var(--muted);font-size:.9rem}
+
+.outros{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+.outros div{padding:10px 16px}
+.outros div+div{border-left:1px solid var(--line)}
+.outros b{display:block;font-size:1.1rem;font-variation-settings:"wdth" 75;font-variant-numeric:tabular-nums}
+.outros span{font-size:.8rem;color:var(--muted)}
+.nota{margin:0;padding:10px 16px 14px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line)}
+.nota:empty{display:none}
+.msg{padding:10px 16px;border-top:1px solid var(--line);border-left:5px solid var(--err);font-size:.85rem;display:none}
+
+details{margin-top:28px;font-size:.9rem;color:var(--muted);max-width:900px}
+details summary{cursor:pointer;font-weight:650;color:var(--ink)}
+details label{display:block;margin-top:10px}
+details input{width:100%;margin-top:4px}
+code{font-size:.85em;word-break:break-all}
+#urlPreview{display:block;margin-top:4px}
+@media (max-width:520px){.cand .num{font-size:1.1rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Apuração Eleições 2026</h1>
+    <div class="controls">
+      <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Parado</span></div>
+      <select id="modo" aria-label="Fonte dos dados">
+        <option value="demo">Demonstração</option>
+        <option value="live">Ao vivo (TSE)</option>
+      </select>
+      <button class="primary" id="toggle">Iniciar</button>
+    </div>
+  </header>
+
+  <div class="contador" aria-live="off">
+    <span class="ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" class="ring-bg"/><circle cx="18" cy="18" r="15" class="ring-fg" id="ringFg"/></svg></span>
+    <span><b id="proxima">—</b> para a próxima atualização</span>
+    <span class="sep"></span>
+    <span><b id="ritmo">0</b> atualizações por minuto</span>
+    <span class="sep"></span>
+    <span><b id="total">0</b> no total</span>
+  </div>
+
+  <main class="grid" id="grid"></main>
+
+  <details>
+    <summary>Configurar fonte ao vivo</summary>
+    <p>O painel lê os arquivos JSON públicos do TSE. O código da eleição muda a cada pleito: confira o de 2026 abrindo resultados.tse.jus.br com o DevTools (aba Network) e copiando o número que aparece no endereço dos arquivos <code>-r.json</code>.</p>
+    <label>Código da eleição (1º turno)
+      <input id="eleicao" value="" placeholder="ex.: 544 (código de 2022)">
+    </label>
+    <label>Ano no caminho
+      <input id="ano" value="ele2026">
+    </label>
+    <label>Atualizar a cada (segundos)
+      <input id="intervalo" type="number" min="15" value="30">
+    </label>
+    <p>URLs geradas: <span id="urlPreview">—</span></p>
+  </details>
+</div>
+
+<script>
+/* Disputas acompanhadas. Em 2026 o Senado renova 2/3: duas vagas por estado. */
+const CORRIDAS = [
+  {id:"pres", titulo:"Presidente",         escopo:"Brasil",            uf:"br", cargo:"0001", vagas:1,  eleitorado:156e6},
+  {id:"sen",  titulo:"Senador",            escopo:"Paraná · 2 vagas",  uf:"pr", cargo:"0005", vagas:2,  eleitorado:8.6e6},
+  {id:"depf", titulo:"Deputado federal",   escopo:"Paraná · 30 vagas", uf:"pr", cargo:"0006", vagas:30, eleitorado:8.6e6, proporcional:true},
+  {id:"depe", titulo:"Deputado estadual",  escopo:"Paraná · 54 vagas", uf:"pr", cargo:"0007", vagas:54, eleitorado:8.6e6, proporcional:true}
+];
+const $ = id => document.getElementById(id);
+
+const fmtInt = n => Number(n || 0).toLocaleString("pt-BR");
+const toNum = s => typeof s === "number" ? s : parseFloat(String(s || "0").replace(/\./g,"").replace(",", ".")) || 0;
+const fmtPct = n => n.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+
+/* ---------- Monta os painéis ---------- */
+CORRIDAS.forEach(c => {
+  const el = document.createElement("section");
+  el.className = "painel";
+  el.setAttribute("aria-label", `${c.titulo}, ${c.escopo}`);
+  el.innerHTML = `
+    <div class="painel-head" aria-live="polite">
+      <h2>${c.titulo}<small>${c.escopo}</small></h2>
+      <div class="pct" data-k="pct">0,00<small>% das seções apuradas</small></div>
+      <div class="track"><div class="fill" data-k="pctBar" style="width:0%"></div></div>
+      <div class="meta" data-k="atualizado">Sem dados ainda</div>
+    </div>
+    <div class="msg" data-k="msg" role="alert"></div>
+    <div class="cands${c.proporcional ? " longa" : ""}" data-k="cands"><div class="vazio">Aguardando dados.</div></div>
+    <div class="outros" data-k="outros"></div>
+    <p class="nota" data-k="nota"></p>`;
+  c.el = k => el.querySelector(`[data-k="${k}"]`);
+  $("grid").appendChild(el);
+});
+
+function buildUrl(c){
+  const ele = $("eleicao").value.trim();
+  const ano = $("ano").value.trim() || "ele2026";
+  if (!ele) return null;
+  const e = ele.padStart(6, "0");
+  return `https://resultados.tse.jus.br/oficial/${ano}/${ele}/dados-simplificados/${c.uf}/${c.uf}-c${c.cargo}-e${e}-r.json`;
+}
+function refreshPreview(){
+  $("urlPreview").innerHTML = "";
+  if (!$("eleicao").value.trim()){ $("urlPreview").textContent = "preencha o código da eleição"; return; }
+  CORRIDAS.forEach(c => { const k = document.createElement("code"); k.textContent = buildUrl(c); $("urlPreview").appendChild(k); });
+}
+["eleicao","ano"].forEach(id => $(id).addEventListener("input", refreshPreview));
+refreshPreview();
+
+/* ---------- Normaliza o JSON do TSE (formato de 2022, lido de forma tolerante) ---------- */
+function normalize(d){
+  const cands = (d.cand || []).map(c => ({
+    nome: c.nm || c.nmu || "Sem nome",
+    partido: c.cc || c.sgp || "",
+    numero: c.n || "",
+    votos: toNum(c.vap),
+    pct: toNum(c.pvap),
+    eleito: (c.e === "s" || /^eleito/i.test(c.st || "")),
+    segundo: /2º turno/i.test(c.st || "")
+  }));
+  return {
+    pst: toNum(d.pst),
+    cands,
+    brancos: {v: toNum(d.vb), p: toNum(d.pvb)},
+    nulos: {v: toNum(d.tvn ?? d.vn), p: toNum(d.ptvn ?? d.pvn)},
+    abst: {v: toNum(d.a), p: toNum(d.pa)},
+    hora: d.hg ? `${d.dg || ""} ${d.hg}`.trim() : (d.ht ? `${d.dt || ""} ${d.ht}`.trim() : null)
+  };
+}
+
+/* ---------- Modo demonstração: dados fictícios que avançam ---------- */
+const PARTIDOS = ["Partido Azul","Partido Verde","Partido Laranja","Partido Cinza","Partido Roxo","Partido Vinho"];
+const DEMO_FIXO = {
+  pres: [
+    {nome:"Helena Duarte", partido:"Partido Azul", w:.41},
+    {nome:"Ricardo Montes", partido:"Partido Verde", w:.37},
+    {nome:"Lúcia Aranha", partido:"Partido Laranja", w:.11},
+    {nome:"Paulo Brites", partido:"Partido Cinza", w:.07},
+    {nome:"Outros candidatos", partido:"", w:.04}
+  ],
+  sen: [
+    {nome:"Marta Kowalski", partido:"Partido Verde", w:.27},
+    {nome:"Jorge Tavares", partido:"Partido Azul", w:.24},
+    {nome:"Celso Ribas", partido:"Partido Laranja", w:.19},
+    {nome:"Ana Paula Zanin", partido:"Partido Roxo", w:.16},
+    {nome:"Edson Müller", partido:"Partido Cinza", w:.09},
+    {nome:"Outros candidatos", partido:"", w:.05}
+  ]
+};
+/* Deputados: lista fictícia longa, com votos concentrados nos primeiros */
+function demoDeputados(n, salto){
+  const pre = ["Ana","Bruno","Carla","Diego","Elisa","Fábio","Gisele","Hugo","Irene","João","Karina","Leandro","Marina","Nelson","Olga","Pedro","Rita","Sérgio","Tânia","Vítor"];
+  const sob = ["Andrade","Bortolini","Cavalcanti","Dallagnol","Esposito","Ferraz","Gomes","Hoffmann","Iwamoto","Jardim","Krüger","Lopes","Moraes","Nogueira","Oliveira","Pacheco","Quadros","Rocha","Silveira","Teixeira","Urbano","Vieira","Wolff","Zanetti"];
+  return Array.from({length:n}, (_,i) => ({
+    nome: `${pre[(i + salto) % pre.length]} ${sob[(i*7 + salto) % sob.length]}`,
+    partido: PARTIDOS[(i*5) % PARTIDOS.length],
+    w: 1/Math.pow(i+4, 1.1) * (.8 + Math.random()*.4)
+  }));
+}
+function prepararDemo(c){
+  c.demoProg = 0;
+  c.demoBase = DEMO_FIXO[c.id] || demoDeputados(c.vagas*4, c.id === "depe" ? 3 : 0);
+}
+function demoData(c){
+  c.demoProg = Math.min(100, c.demoProg + 3 + Math.random()*9);
+  const comp = c.eleitorado * .79 * c.demoProg/100;
+  const validos = comp * .94;
+  const ws = c.demoBase.map(d => d.w * (1 + (Math.random()-.5)*.06));
+  const sum = ws.reduce((a,b)=>a+b,0);
+  const cands = c.demoBase.map((d,i) => {
+    const pct = ws[i]/sum*100;
+    return {nome:d.nome, partido:d.partido, votos:Math.round(validos*pct/100), pct, eleito:false, segundo:false};
+  });
+  if (c.demoProg >= 100){
+    cands.sort((a,b)=>b.pct-a.pct);
+    const reais = cands.filter(x => x.partido);
+    if (c.cargo === "0001"){ if (reais[0].pct > 50) reais[0].eleito = true; else reais[0].segundo = reais[1].segundo = true; }
+    else reais.slice(0, c.vagas).forEach(x => x.eleito = true);
+  }
+  return {pst:c.demoProg, cands, brancos:{v:comp*.025,p:2.5}, nulos:{v:comp*.035,p:3.5}, abst:{v:c.eleitorado*.21*c.demoProg/100,p:21}, hora:new Date().toLocaleTimeString("pt-BR")};
+}
+
+/* ---------- Render ---------- */
+function render(c, r){
+  c.el("pct").firstChild.nodeValue = fmtPct(r.pst);
+  c.el("pctBar").style.width = r.pst + "%";
+  c.el("atualizado").textContent = r.hora ? `Atualizado às ${r.hora}` : "Atualizado agora";
+  const todos = [...r.cands].sort((a,b)=>b.votos-a.votos);
+  const list = c.proporcional ? todos.slice(0, c.vagas) : todos;
+  const max = Math.max(...list.map(x=>x.pct), 1);
+  const box = c.el("cands");
+  box.innerHTML = "";
+  list.forEach((x,i) => {
+    const el = document.createElement("div");
+    el.className = "cand" + (i===0 ? " lead" : "");
+    const tag = x.eleito ? '<span class="tag">Eleito</span>' : x.segundo ? '<span class="tag">2º turno</span>' : "";
+    el.innerHTML = `<span class="pos">${i+1}º</span>
+      <span><span class="nome"></span><span class="partido"></span>${tag}</span>
+      <span class="num">${fmtPct(x.pct)}%<span class="votos">${fmtInt(x.votos)} votos</span></span>
+      <div class="bar"><div class="fill" style="width:${x.pct/max*100}%"></div></div>`;
+    el.querySelector(".nome").textContent = x.nome;
+    el.querySelector(".partido").textContent = x.partido;
+    box.appendChild(el);
+  });
+  c.el("outros").innerHTML = [["Brancos",r.brancos],["Nulos",r.nulos],["Abstenções",r.abst]]
+    .map(([n,o]) => `<div><b>${fmtPct(o.p)}%</b><span>${n}: ${fmtInt(Math.round(o.v))}</span></div>`).join("");
+  c.el("nota").textContent = c.proporcional
+    ? `Mostrando os ${list.length} mais votados de ${fmtInt(todos.length)} candidatos. Nas eleições proporcionais, as vagas dependem também do quociente partidário: ser um dos mais votados não garante a eleição.`
+    : "";
+}
+function showMsg(c, t){ const m = c.el("msg"); m.textContent = t || ""; m.style.display = t ? "block" : "none"; }
+function setStatus(kind, txt){ $("dot").className = "dot " + kind; $("statusTxt").textContent = txt; }
+
+/* ---------- Contador de atualizações ---------- */
+let intervaloSeg = 30, proximaEm = null, totalAtual = 0, historico = [], relogio = null;
+const CIRC = 94.25;
+function registrarAtualizacao(){
+  totalAtual++;
+  const agora = Date.now();
+  historico.push(agora);
+  historico = historico.filter(t => agora - t <= 60000);
+  $("total").textContent = fmtInt(totalAtual);
+  $("ritmo").textContent = historico.length;
+}
+function atualizarRelogio(){
+  if (!timer || !proximaEm){ $("proxima").textContent = "—"; $("ringFg").style.strokeDashoffset = CIRC; return; }
+  const rest = Math.max(0, Math.ceil((proximaEm - Date.now())/1000));
+  const m = Math.floor(rest/60), s = rest % 60;
+  $("proxima").textContent = m ? `${m}min ${String(s).padStart(2,"0")}s` : `${s}s`;
+  $("ringFg").style.strokeDashoffset = CIRC * (rest / intervaloSeg);
+  const agora = Date.now();
+  historico = historico.filter(t => agora - t <= 60000);
+  $("ritmo").textContent = historico.length;
+}
+
+/* ---------- Loop ---------- */
+let timer = null;
+async function carregar(c){
+  try{
+    const res = await fetch(buildUrl(c) + "?t=" + Date.now(), {cache:"no-store"});
+    if (!res.ok) throw new Error(res.status === 404 ? "Arquivo não encontrado (404). Confira o código da eleição." : `O TSE respondeu com erro ${res.status}.`);
+    render(c, normalize(await res.json()));
+    showMsg(c, "");
+    return true;
+  }catch(e){
+    showMsg(c, e.message.includes("Failed to fetch") || e.name === "TypeError"
+      ? "O navegador não conseguiu ler o arquivo do TSE. Abra este painel por um servidor local ou use um proxy."
+      : e.message);
+    return false;
+  }
+}
+async function tick(){
+  proximaEm = Date.now() + intervaloSeg*1000;
+  registrarAtualizacao();
+  if ($("modo").value === "demo"){
+    CORRIDAS.forEach(c => { if (c.demoProg < 100) render(c, demoData(c)); showMsg(c, ""); });
+    setStatus("live","Demonstração");
+    if (CORRIDAS.every(c => c.demoProg >= 100)) stop("Apuração concluída (demo)");
+    return;
+  }
+  if (!$("eleicao").value.trim()){
+    CORRIDAS.forEach(c => showMsg(c, "Informe o código da eleição em “Configurar fonte ao vivo” para usar os dados do TSE."));
+    stop("Aguardando configuração", "err");
+    return;
+  }
+  const oks = await Promise.all(CORRIDAS.map(carregar));
+  oks.every(Boolean) ? setStatus("live","Ao vivo")
+    : oks.some(Boolean) ? setStatus("err","Falha em parte dos painéis")
+    : setStatus("err","Falha na leitura");
+}
+function start(){
+  stop(); totalAtual = 0; historico = [];
+  CORRIDAS.forEach(prepararDemo);
+  intervaloSeg = $("modo").value === "demo" ? 2 : Math.max(15, +$("intervalo").value || 30);
+  timer = setInterval(tick, intervaloSeg*1000);
+  relogio = setInterval(atualizarRelogio, 250);
+  $("toggle").textContent = "Parar";
+  tick();
+}
+function stop(txt, kind){
+  if (timer){ clearInterval(timer); timer = null; }
+  if (relogio){ clearInterval(relogio); relogio = null; }
+  proximaEm = null; atualizarRelogio();
+  $("toggle").textContent = "Iniciar";
+  if (txt) setStatus(kind || "", txt);
+}
+$("toggle").addEventListener("click", () => timer ? stop("Parado") : start());
+$("modo").addEventListener("change", () => { if (timer) start(); });
+</script>
+</body>
+</html>
