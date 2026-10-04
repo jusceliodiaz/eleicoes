@@ -82,41 +82,6 @@ def card_html(c):
 """
 
 
-# Anúncios Adsterra (banners iframe). Cada célula entra no grid entre os cards.
-AD_TOPO = """    <div class="ad ad-largo">
-      <script>
-        if (innerWidth >= 760) anuncioAdsterra("91e78889b4d1a1abb8bf514774f1d2f7", 728, 90);
-        else if (innerWidth >= 500) anuncioAdsterra("8c108bb08b83f87383dddcffb69a1658", 468, 60);
-        else anuncioAdsterra("3fed9f6a3aab2213b0c29a5ce6998f19", 320, 50);
-      </script>
-    </div>
-"""
-AD_RETANGULO = """    <div class="ad ad-retangulo">
-      <script>anuncioAdsterra("b0edda91e7818c8857b4e08bf59b45be", 300, 250);</script>
-    </div>
-"""
-# Em telas largas, os dois arranha-céus lado a lado (ocupa duas linhas do grid); no resto, um 300x250.
-AD_ALTO = """    <div class="ad ad-retangulo">
-      <script>
-        if (innerWidth >= 1100){
-          document.currentScript.parentElement.classList.add("ad-alto");
-          document.write('<div class="ad-par"><div>');
-          anuncioAdsterra("2e475f82fe9a3fe70c927b401e1b6dad", 160, 600);
-          document.write('</div><div>');
-          anuncioAdsterra("76885d096ff2769e62141c29986a9c51", 160, 300);
-          document.write('</div></div>');
-        } else anuncioAdsterra("b0edda91e7818c8857b4e08bf59b45be", 300, 250);
-      </script>
-    </div>
-"""
-AD_NATIVO = """    <div class="ad ad-largo">
-      <script async="async" data-cfasync="false" src="https://bicea.org/21/813f7a11f64eeb9cae8767af1a4a75e0"></script>
-      <div id="container-813f7a11f64eeb9cae8767af1a4a75e0"></div>
-    </div>
-    <p class="patrocinado"><a href="https://arwf.org/4/5a1e35ec282ca23bba451c632d59aa7d" target="_blank" rel="sponsored noopener">Patrocinado</a></p>
-"""
-
-
 def json_ld(l):
     lugar = ({"@type": "Country", "name": "Brasil"} if l["tipo"] == "pais"
              else {"@type": "State", "name": "Paraná", "containedInPlace": {"@type": "Country", "name": "Brasil"}} if l["tipo"] == "estado"
@@ -173,8 +138,7 @@ def pagina(l):
     nav = "\n".join(
         f'      <li><a href="/{o["slug"] + "/" if o["slug"] else ""}"{atual if o is l else ""}>{e(o["nome"])}</a></li>'
         for o in LOCAIS)
-    corpo = (AD_TOPO + card_html(cs[0]) + card_html(cs[1]) + AD_RETANGULO
-             + card_html(cs[2]) + card_html(cs[3]) + card_html(cs[4]) + AD_ALTO + AD_NATIVO)
+    corpo = "".join(card_html(c) for c in cs)
     config = json.dumps({"cards": [{k: c[k] for k in ("id", "eleicao", "uf", "mun", "cargo")} for c in cs]})
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
@@ -219,13 +183,7 @@ def pagina(l):
 <script type="application/ld+json">
 {json_ld(l)}
 </script>
-{analytics()}<script>
-/* Banners iframe da Adsterra: cada um precisa do seu atOptions logo antes do script. */
-function anuncioAdsterra(key, width, height){{
-  document.write(`<script>atOptions={{key:"${{key}}",format:"iframe",height:${{height}},width:${{width}},params:{{}}}};<\\/script><script src="https://bicea.org/22/${{key}}"><\\/script>`);
-}}
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+{analytics()}<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/painel.css">
@@ -293,9 +251,6 @@ function anuncioAdsterra(key, width, height){{
 <script>window.PAGINA = {config};</script>
 <script src="/assets/painel.js"></script>
 <script src="/assets/grafico.js"></script>
-<!-- Adsterra -->
-<script data-cfasync="false" src="https://afders.org/1/1509e2503a8d75d315fd21393ebc4c13"></script>
-<script data-cfasync="false" src="https://bicea.org/14/e1dd02e019e5cd1f0d1ac25f7d4fbcfc"></script>
 </body>
 </html>
 """

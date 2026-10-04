@@ -43,7 +43,7 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 @media (max-width:520px){.contador .sep{display:none}}
 
 /* Grid único: cards e anúncios intercalados */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));grid-auto-flow:row dense;gap:18px;align-items:start}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:18px;align-items:start}
 .painel{min-width:0;background:var(--panel);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
 .cand>span{min-width:0;overflow-wrap:break-word}
 .painel-head{padding:16px 18px 14px;border-left:8px solid var(--urna)}
@@ -143,14 +143,3 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .grafico-nota{margin:12px 0 0;font-size:.78rem;color:var(--muted)}
 .linha .sigla{display:none}
 @media (max-width:520px){.linha{grid-template-columns:4.5rem 1fr}.linha .nome-longo{display:none}.linha .sigla{display:inline}}
-
-/* Células de anúncio dentro do grid */
-.ad{background:var(--panel);border-radius:14px;padding:10px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:hidden;min-width:0}
-.ad::before{content:"Publicidade";align-self:flex-start;font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
-.ad-largo{grid-column:1/-1}
-.ad-retangulo{min-height:290px}
-.ad-alto{grid-row:span 2}
-.ad-par{display:flex;gap:12px;justify-content:center}
-.ad iframe{max-width:100%}
-.patrocinado{grid-column:1/-1;text-align:center;font-size:.8rem;margin:0}
-.patrocinado a{color:var(--muted)}
