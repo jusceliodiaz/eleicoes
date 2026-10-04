@@ -3,7 +3,7 @@
    proporção já apurada naquele estado (corrige estados que apuram mais rápido).
    Governador: em cada estado, diz se a tendência é de vitória no 1º turno, 2º turno ou indefinido.
    Usa toNum/fmtInt/fmtPct/BASE_TSE/NOMES_UF/cargoDe/selecionarUF de painel.js e ABAS/abrirAba de grafico.js. */
-const PV_INTERVALO_SEG = 60;
+const PV_INTERVALO_SEG = 90; // 55 arquivos por leitura: mais espaçado para não pesar no TSE
 let pvTimer = null;
 
 function urlPv(id, uf){
@@ -22,7 +22,7 @@ function lerPv(d){
   return {te: toNum(e.te), est: toNum(e.est), pst: toNum(s.pst), cands, validos: cands.reduce((t, c) => t + c.votos, 0)};
 }
 async function buscarPv(id, uf){
-  const res = await fetch(urlPv(id, uf) + "?t=" + Date.now(), {cache:"no-store"});
+  const res = await buscarTSE(urlPv(id, uf));
   if (!res.ok) throw new Error(res.status);
   return lerPv(await res.json());
 }

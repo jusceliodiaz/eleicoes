@@ -21,7 +21,7 @@ function lerArquivo(d){
 }
 
 async function buscar(uf){
-  const res = await fetch(urlCargo(gCargo, uf) + "?t=" + Date.now(), {cache:"no-store"});
+  const res = await buscarTSE(urlCargo(gCargo, uf));
   if (!res.ok) throw new Error(res.status);
   return lerArquivo(await res.json());
 }

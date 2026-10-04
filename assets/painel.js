@@ -52,8 +52,20 @@ function montarCards(){
 }
 const TITULO_BASE = document.title;
 
-/* O TSE não envia cabeçalho CORS: no ar (Vercel) e no servidor.py, /tse/ é um proxy. */
-const BASE_TSE = location.protocol.startsWith("http") ? "/tse" : "https://resultados.tse.jus.br";
+/* O navegador busca direto no TSE (que libera CORS): cada visitante usa o próprio IP e o cache do TSE.
+   Pelo proxy /tse/ (Vercel ou servidor.py) todos saem do mesmo IP e o TSE bloqueia com 429,
+   então ele fica só como reserva. Sem "?t=": o TSE já manda max-age curto e serve do cache dele. */
+const BASE_TSE = "https://resultados.tse.jus.br";
+const PROXY_TSE = location.protocol.startsWith("http") ? "/tse" : null;
+async function buscarTSE(url){
+  try{
+    const res = await fetch(url);
+    if (res.ok || res.status === 404 || !PROXY_TSE) return res;
+  }catch(e){
+    if (!PROXY_TSE) throw e;
+  }
+  return fetch(url.replace(BASE_TSE, PROXY_TSE));
+}
 function buildUrl(c){
   return `${BASE_TSE}/oficial/ele2026/${c.eleicao}/dados/${c.uf}/${c.uf}-c${c.cargo}-e${c.eleicao.padStart(6,"0")}-u.json`;
 }
@@ -190,8 +202,11 @@ function atualizarRelogio(){
 async function carregar(c){
   const g = geracao;
   try{
-    const res = await fetch(buildUrl(c) + "?t=" + Date.now(), {cache:"no-store"});
-    if (!res.ok) throw new Error(res.status === 404 ? "O TSE ainda não publicou este arquivo (404)." : `O TSE respondeu com erro ${res.status}.`);
+    const res = await buscarTSE(buildUrl(c));
+    if (!res.ok) throw new Error(
+      res.status === 404 ? "O TSE ainda não publicou este arquivo (404)."
+      : res.status === 429 ? "O TSE está limitando os acessos agora (429). Tentando de novo na próxima atualização."
+      : `O TSE respondeu com erro ${res.status}.`);
     const dados = await res.json();
     if (g !== geracao) return true; // o estado mudou enquanto esperava
     render(c, normalize(dados));
@@ -199,7 +214,7 @@ async function carregar(c){
     return true;
   }catch(e){
     showMsg(c, e.message.includes("Failed to fetch") || e.name === "TypeError"
-      ? "O navegador não conseguiu ler o arquivo do TSE. Rode “python3 servidor.py” e abra http://localhost:8000."
+      ? "Não foi possível falar com o TSE agora. Tentando de novo na próxima atualização."
       : e.message);
     return false;
   }
