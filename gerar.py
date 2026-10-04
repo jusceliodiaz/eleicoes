@@ -66,6 +66,7 @@ def card_html(c):
         <h2>{html.escape(c['titulo'])}<small>{html.escape(c['escopo'])}</small></h2>
         <div class="pct" data-k="pct">0,00<small>% das seções apuradas</small></div>
         <div class="track"><div class="fill" data-k="pctBar" style="width:0%"></div></div>
+        <div class="urnas" data-k="urnas"></div>
         <div class="meta" data-k="atualizado">Carregando resultados do TSE…</div>
       </div>
       <div class="msg" data-k="msg" role="alert"></div>

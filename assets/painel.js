@@ -33,6 +33,8 @@ function normalize(d){
   const s = d.s || {}, v = d.v || {}, e = d.e || {};
   return {
     pst: toNum(s.pst),
+    secoes: {total: toNum(s.ts), apuradas: toNum(s.st), faltam: toNum(s.snt)},
+    quando: dataTSE(d.dg, d.hg),
     cands,
     brancos: {v: toNum(v.vb), p: toNum(v.pvb)},
     nulos: {v: toNum(v.tvn), p: toNum(v.ptvn)},
@@ -41,10 +43,54 @@ function normalize(d){
   };
 }
 
+/* Data e hora do TSE vêm no horário de Brasília ("04/10/2026", "18:12:13"). */
+function dataTSE(dg, hg){
+  const m = /^(\d\d)\/(\d\d)\/(\d{4})$/.exec(dg || "");
+  if (!m || !hg) return null;
+  const t = Date.parse(`${m[3]}-${m[2]}-${m[1]}T${hg}-03:00`);
+  return isNaN(t) ? null : t;
+}
+
+/* ---------- Previsão de término ----------
+   Ritmo = seções apuradas por minuto entre leituras do TSE (janela de até 10 min).
+   Sem histórico ainda, usa a média desde o fechamento das urnas (17h de Brasília). */
+const FECHAMENTO = Date.parse("2026-10-04T17:00:00-03:00");
+const JANELA_MS = 10 * 60000;
+function ritmoPorMin(c, r){
+  if (!r.quando) return null;
+  c.amostras = (c.amostras || []).filter(a => a.t < r.quando && r.quando - a.t <= JANELA_MS);
+  const ant = c.amostras[0];
+  c.amostras.push({t: r.quando, st: r.secoes.apuradas});
+  if (ant && r.quando - ant.t >= 60000 && r.secoes.apuradas > ant.st)
+    return (r.secoes.apuradas - ant.st) / ((r.quando - ant.t) / 60000);
+  const desde = (r.quando - FECHAMENTO) / 60000;
+  return desde > 5 && r.secoes.apuradas > 0 ? r.secoes.apuradas / desde : null;
+}
+function fmtDuracao(min){
+  if (min < 1) return "menos de 1 min";
+  const h = Math.floor(min / 60), m = Math.round(min % 60);
+  return h ? `${h}h${String(m).padStart(2,"0")}` : `${m} min`;
+}
+const fmtHora = t => new Date(t).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit", timeZone:"America/Sao_Paulo"});
+function textoPrevisao(c, r){
+  const {total, faltam} = r.secoes;
+  if (!total) return "";
+  if (!faltam) return "Apuração concluída";
+  const ritmo = ritmoPorMin(c, r);
+  if (!ritmo) return "Previsão de término: calculando…";
+  const min = faltam / ritmo;
+  return `Previsão de término: <b>~${fmtDuracao(min)}</b> (por volta das ${fmtHora(r.quando + min*60000)}) · ${fmtInt(Math.round(ritmo))} urnas/min`;
+}
+
 /* ---------- Render ---------- */
 function render(c, r){
   c.el("pct").firstChild.nodeValue = fmtPct(r.pst);
   c.el("pctBar").style.width = r.pst + "%";
+  const u = r.secoes;
+  c.el("urnas").innerHTML = u.total ? `<div><b>${fmtInt(u.apuradas)}</b>urnas apuradas</div>
+    <div><b>${fmtInt(u.total)}</b>total de urnas</div>
+    <div><b>${fmtInt(u.faltam)}</b>faltam</div>
+    <div class="eta">${textoPrevisao(c, r)}</div>` : "";
   c.el("atualizado").textContent = r.hora ? `Atualizado às ${r.hora}` : "Atualizado agora";
   const list = [...r.cands].sort((a,b)=>b.votos-a.votos).slice(0, MOSTRAR);
   const max = Math.max(...list.map(x=>x.pct), 1);
