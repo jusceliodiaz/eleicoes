@@ -11,7 +11,7 @@ HOJE = "2026-10-04"
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
-# Códigos do TSE: eleição federal 6257 (Presidente) e estadual 6259 (Senador e Deputados).
+# Códigos do TSE: eleição federal 6257 (Presidente) e estadual 6259 (Governador, Senador e Deputados).
 # "mun" é o código TSE do município (config/mun-e006259-cm.json).
 LOCAIS = [
     {"slug": "", "nome": "Brasil", "tipo": "pais", "geo": (-15.7939, -47.8828),
@@ -19,8 +19,8 @@ LOCAIS = [
      "descricao": "Apuração ao vivo das Eleições 2026 com dados oficiais do TSE: resultado para Presidente no Brasil e nos 27 estados, urnas apuradas e previsão de término. Atualiza a cada 30 segundos.",
      "h1": "Apuração Eleições 2026", "sub": "Presidente no Brasil e nos 27 estados, ao vivo"},
     {"slug": "parana", "nome": "Paraná", "tipo": "estado", "geo": (-25.4284, -49.2733),
-     "titulo": "Apuração Paraná 2026 ao vivo: Senador, Deputados e Presidente no PR",
-     "descricao": "Resultado da eleição 2026 no Paraná ao vivo: quem lidera para Senador, Deputado federal, Deputado estadual e Presidente no PR. Dados do TSE.",
+     "titulo": "Apuração Paraná 2026 ao vivo: Governador, Senador, Deputados e Presidente no PR",
+     "descricao": "Resultado da eleição 2026 no Paraná ao vivo: quem lidera para Governador, Senador, Deputado federal, Deputado estadual e Presidente no PR. Dados do TSE.",
      "h1": "Apuração no Paraná 2026", "sub": "Votos no estado do Paraná, ao vivo"},
     {"slug": "curitiba", "nome": "Curitiba", "mun": "75353", "geo": (-25.4284, -49.2733)},
     {"slug": "londrina", "nome": "Londrina", "mun": "76678", "geo": (-23.3045, -51.1696)},
@@ -40,21 +40,22 @@ for l in LOCAIS:
         n = l["nome"]
         l.update(tipo="cidade",
                  titulo=f"Apuração em {n} 2026 ao vivo: resultado da eleição",
-                 descricao=f"Resultado da eleição 2026 em {n} (PR) ao vivo: quem lidera para Presidente, Senador e Deputados em {n}. Dados oficiais do TSE.",
+                 descricao=f"Resultado da eleição 2026 em {n} (PR) ao vivo: quem lidera para Presidente, Governador, Senador e Deputados em {n}. Dados oficiais do TSE.",
                  h1=f"Apuração em {n} 2026", sub=f"Votos em {n}, Paraná, ao vivo")
 
 
 def cards(l):
     mun = l.get("mun", "")
     if l["tipo"] == "pais":
-        esc = {"pres": "Brasil", "sen": "Paraná · 2 vagas", "depf": "Paraná · 30 vagas", "depe": "Paraná · 54 vagas"}
+        esc = {"pres": "Brasil", "gov": "Paraná", "sen": "Paraná · 2 vagas", "depf": "Paraná · 30 vagas", "depe": "Paraná · 54 vagas"}
         pres_uf = "br"
     else:
         alvo = "Paraná" if l["tipo"] == "estado" else l["nome"]
-        esc = dict.fromkeys(["pres", "sen", "depf", "depe"], f"Votos em {alvo}")
+        esc = dict.fromkeys(["pres", "gov", "sen", "depf", "depe"], f"Votos em {alvo}")
         pres_uf = "pr"
     return [
         {"id": "pres", "titulo": "Presidente", "escopo": esc["pres"], "eleicao": "6257", "uf": pres_uf, "mun": mun, "cargo": "0001"},
+        {"id": "gov", "titulo": "Governador", "escopo": esc["gov"], "eleicao": "6259", "uf": "pr", "mun": mun, "cargo": "0003"},
         {"id": "sen", "titulo": "Senador", "escopo": esc["sen"], "eleicao": "6259", "uf": "pr", "mun": mun, "cargo": "0005"},
         {"id": "depf", "titulo": "Deputado federal", "escopo": esc["depf"], "eleicao": "6259", "uf": "pr", "mun": mun, "cargo": "0006"},
         {"id": "depe", "titulo": "Deputado estadual", "escopo": esc["depe"], "eleicao": "6259", "uf": "pr", "mun": mun, "cargo": "0007"},
@@ -164,7 +165,7 @@ def pagina(l):
                     + ", ".join(f"apuração {n}" for n in ESTADOS))
     else:
         palavras = (f"apuração 2026, eleições 2026, resultado eleição {l['nome']}, apuração {l['nome']}, apuração Paraná, "
-                    "apuração Curitiba, senador Paraná 2026, deputado federal Paraná, deputado estadual Paraná, "
+                    "apuração Curitiba, governador Paraná 2026, senador Paraná 2026, deputado federal Paraná, deputado estadual Paraná, "
                     "presidente 2026, presidente por estado, TSE ao vivo")
     linhas_estados = "".join(f"<tr><td>{n}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>" for n in ESTADOS)
     cs = cards(l)
@@ -173,7 +174,7 @@ def pagina(l):
         f'      <li><a href="/{o["slug"] + "/" if o["slug"] else ""}"{atual if o is l else ""}>{e(o["nome"])}</a></li>'
         for o in LOCAIS)
     corpo = (AD_TOPO + card_html(cs[0]) + card_html(cs[1]) + AD_RETANGULO
-             + card_html(cs[2]) + card_html(cs[3]) + AD_ALTO + AD_NATIVO)
+             + card_html(cs[2]) + card_html(cs[3]) + card_html(cs[4]) + AD_ALTO + AD_NATIVO)
     config = json.dumps({"cards": [{k: c[k] for k in ("id", "eleicao", "uf", "mun", "cargo")} for c in cs]})
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
