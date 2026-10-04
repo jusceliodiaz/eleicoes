@@ -3,7 +3,7 @@
 Uso: python3 gerar.py
 Edite SITE, GA_ID ou ESTADOS e rode de novo.
 """
-import json, os, html
+import json, os, html, hashlib
 
 SITE = "https://eleicoesbrasil.vercel.app"
 GA_ID = "G-25D1149GZ8"            # Google Analytics 4, ex.: "G-ABC123XYZ". Vazio = sem Analytics.
@@ -65,6 +65,12 @@ def json_ld(l):
         ],
     }
     return json.dumps(dados, ensure_ascii=False, indent=1)
+
+
+def v(arquivo):
+    """Versão do arquivo (hash do conteúdo) para o navegador não usar cópia antiga do cache."""
+    with open(os.path.join(AQUI, arquivo), "rb") as f:
+        return f"/{arquivo}?v={hashlib.md5(f.read()).hexdigest()[:8]}"
 
 
 def analytics():
@@ -137,7 +143,7 @@ def pagina(l):
 {analytics()}<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/painel.css">
+<link rel="stylesheet" href="{v('assets/painel.css')}">
 </head>
 <body>
 <div class="wrap">
@@ -216,9 +222,9 @@ def pagina(l):
   <noscript><p class="rodape">Ative o JavaScript para ver a apuração ao vivo.</p></noscript>
 </div>
 
-<script src="/assets/painel.js"></script>
-<script src="/assets/grafico.js"></script>
-<script src="/assets/previsao.js"></script>
+<script src="{v('assets/painel.js')}"></script>
+<script src="{v('assets/grafico.js')}"></script>
+<script src="{v('assets/previsao.js')}"></script>
 </body>
 </html>
 """

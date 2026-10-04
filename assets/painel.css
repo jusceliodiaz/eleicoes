@@ -147,7 +147,10 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 @media (max-width:520px){.linha{grid-template-columns:4.5rem 1fr}.linha .nome-longo{display:none}.linha .sigla{display:inline}}
 
 /* Lista de candidatos com rolagem (cargos com várias vagas): mesma altura de 2 linhas */
-.cands.rolagem{max-height:8.4rem;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.cands.rolagem{display:block;max-height:8.4rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--muted) transparent}
+.cands.rolagem .cand+.cand{border-top:1px solid var(--line)}
+.cands.rolagem::-webkit-scrollbar{width:8px}
+.cands.rolagem::-webkit-scrollbar-thumb{background:var(--muted);border-radius:4px}
 .dica-estado{grid-column:1/-1;margin:0;padding:14px 16px;border-radius:14px;border:1.5px dashed var(--line);color:var(--muted);font-size:.9rem}
 
 /* Tags de estado: compactas */
