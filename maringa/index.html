@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Apuração em Maringá 2026 ao vivo: resultado da eleição</title>
 <meta name="description" content="Resultado da eleição 2026 em Maringá (PR) ao vivo: quem lidera para Presidente, Senador e Deputados em Maringá. Dados oficiais do TSE.">
-<meta name="keywords" content="apuração 2026, eleições 2026, resultado eleição Maringá, apuração Maringá, apuração Paraná, apuração Curitiba, senador Paraná 2026, deputado federal Paraná, deputado estadual Paraná, presidente 2026, TSE ao vivo">
+<meta name="keywords" content="apuração 2026, eleições 2026, resultado eleição Maringá, apuração Maringá, apuração Paraná, apuração Curitiba, senador Paraná 2026, deputado federal Paraná, deputado estadual Paraná, presidente 2026, presidente por estado, TSE ao vivo">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta name="author" content="Juscelio Diaz">
 <meta name="theme-color" content="#E9EEF2" media="(prefers-color-scheme: light)">
@@ -109,8 +109,6 @@
     "name": "Brasil",
     "address": {
      "@type": "PostalAddress",
-     "addressLocality": "Curitiba",
-     "addressRegion": "PR",
      "addressCountry": "BR"
     }
    },
@@ -170,7 +168,12 @@ function anuncioAdsterra(key, width, height){
     <span><b id="total">0</b> no total</span>
   </div>
 
-  <main class="grid">
+  <div class="abas" role="tablist" aria-label="Visualização">
+    <button role="tab" id="tab-painel" aria-controls="aba-painel" aria-selected="true">Painel</button>
+    <button role="tab" id="tab-grafico" aria-controls="aba-grafico" aria-selected="false" tabindex="-1">Presidente por estado</button>
+  </div>
+
+  <main class="grid" id="aba-painel" role="tabpanel" aria-labelledby="tab-painel">
     <div class="ad ad-largo">
       <script>
         if (innerWidth >= 760) anuncioAdsterra("91e78889b4d1a1abb8bf514774f1d2f7", 728, 90);
@@ -248,11 +251,36 @@ function anuncioAdsterra(key, width, height){
     <p class="patrocinado"><a href="https://arwf.org/4/5a1e35ec282ca23bba451c632d59aa7d" target="_blank" rel="sponsored noopener">Patrocinado</a></p>
   </main>
 
+  <section class="grafico" id="aba-grafico" role="tabpanel" aria-labelledby="tab-grafico" hidden>
+    <div class="grafico-topo">
+      <div>
+        <h2>Presidente por estado</h2>
+        <p class="grafico-sub" id="gResumo">Carregando resultados dos 27 estados…</p>
+      </div>
+      <label class="ordem">Ordenar por
+        <select id="gOrdem">
+          <option value="vantagem">Vantagem do 1º colocado</option>
+          <option value="nome">Estado (A–Z)</option>
+          <option value="apurado">Mais apurado</option>
+        </select>
+      </label>
+    </div>
+    <ul class="legenda" id="gLegenda"></ul>
+    <div class="barras" id="gBarras" role="list"></div>
+    <div class="g-dica" id="gDica" role="tooltip" hidden></div>
+    <details class="g-tabela">
+      <summary>Ver como tabela</summary>
+      <div class="g-tabela-rolagem"><table id="gTabela"><thead><tr><th>Estado</th><th>% apurado</th><th>1º no Brasil</th><th>2º no Brasil</th><th>Outros</th></tr></thead><tbody><tr><td>Acre</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Alagoas</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Amapá</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Amazonas</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Bahia</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Ceará</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Distrito Federal</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Espírito Santo</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Goiás</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Maranhão</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Mato Grosso</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Mato Grosso do Sul</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Minas Gerais</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Pará</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Paraíba</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Paraná</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Pernambuco</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Piauí</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Rio de Janeiro</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Rio Grande do Norte</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Rio Grande do Sul</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Rondônia</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Roraima</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Santa Catarina</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>São Paulo</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Sergipe</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Tocantins</td><td>—</td><td>—</td><td>—</td><td>—</td></tr></tbody></table></div>
+    </details>
+    <p class="grafico-nota">Resultado da eleição para Presidente em todos os estados do Brasil: Acre, Alagoas, Amapá, Amazonas, Bahia, Ceará, Distrito Federal, Espírito Santo, Goiás, Maranhão, Mato Grosso, Mato Grosso do Sul, Minas Gerais, Pará, Paraíba, Paraná, Pernambuco, Piauí, Rio de Janeiro, Rio Grande do Norte, Rio Grande do Sul, Rondônia, Roraima, Santa Catarina, São Paulo, Sergipe e Tocantins. Percentuais sobre os votos válidos em cada estado. Dados oficiais do TSE, atualizados a cada minuto enquanto esta aba está aberta.</p>
+  </section>
+
   <noscript><p class="rodape">Ative o JavaScript para ver a apuração ao vivo.</p></noscript>
 </div>
 
 <script>window.PAGINA = {"cards": [{"id": "pres", "eleicao": "6257", "uf": "pr", "mun": "76910", "cargo": "0001"}, {"id": "sen", "eleicao": "6259", "uf": "pr", "mun": "76910", "cargo": "0005"}, {"id": "depf", "eleicao": "6259", "uf": "pr", "mun": "76910", "cargo": "0006"}, {"id": "depe", "eleicao": "6259", "uf": "pr", "mun": "76910", "cargo": "0007"}]};</script>
 <script src="/assets/painel.js"></script>
+<script src="/assets/grafico.js"></script>
 <!-- Adsterra -->
 <script data-cfasync="false" src="https://afders.org/1/1509e2503a8d75d315fd21393ebc4c13"></script>
 <script data-cfasync="false" src="https://bicea.org/14/e1dd02e019e5cd1f0d1ac25f7d4fbcfc"></script>

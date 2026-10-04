@@ -14,10 +14,10 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 # Códigos do TSE: eleição federal 6257 (Presidente) e estadual 6259 (Senador e Deputados).
 # "mun" é o código TSE do município (config/mun-e006259-cm.json).
 LOCAIS = [
-    {"slug": "", "nome": "Brasil", "tipo": "pais", "geo": (-25.4284, -49.2733),
-     "titulo": "Apuração Eleições 2026 ao vivo: Presidente, Senado e Deputados PR",
-     "descricao": "Apuração ao vivo das Eleições 2026 com dados do TSE: Presidente, Senador do Paraná e deputados mais votados no PR. Atualiza a cada 30 segundos.",
-     "h1": "Apuração Eleições 2026", "sub": "Brasil · Paraná · Curitiba, ao vivo"},
+    {"slug": "", "nome": "Brasil", "tipo": "pais", "geo": (-15.7939, -47.8828),
+     "titulo": "Apuração Eleições 2026 ao vivo: resultado para Presidente no Brasil e por estado",
+     "descricao": "Apuração ao vivo das Eleições 2026 com dados oficiais do TSE: resultado para Presidente no Brasil e nos 27 estados, urnas apuradas e previsão de término. Atualiza a cada 30 segundos.",
+     "h1": "Apuração Eleições 2026", "sub": "Presidente no Brasil e nos 27 estados, ao vivo"},
     {"slug": "parana", "nome": "Paraná", "tipo": "estado", "geo": (-25.4284, -49.2733),
      "titulo": "Apuração Paraná 2026 ao vivo: Senador, Deputados e Presidente no PR",
      "descricao": "Resultado da eleição 2026 no Paraná ao vivo: quem lidera para Senador, Deputado federal, Deputado estadual e Presidente no PR. Dados do TSE.",
@@ -30,6 +30,11 @@ LOCAIS = [
     {"slug": "sao-jose-dos-pinhais", "nome": "São José dos Pinhais", "mun": "78859", "geo": (-25.5307, -49.2063)},
     {"slug": "foz-do-iguacu", "nome": "Foz do Iguaçu", "mun": "75639", "geo": (-25.5163, -54.5854)},
 ]
+ESTADOS = ["Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal", "Espírito Santo",
+           "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul", "Minas Gerais", "Pará", "Paraíba", "Paraná",
+           "Pernambuco", "Piauí", "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia",
+           "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins"]
+
 for l in LOCAIS:
     if "mun" in l:
         n = l["nome"]
@@ -132,7 +137,7 @@ def json_ld(l):
              "startDate": "2026-10-04T08:00:00-03:00", "endDate": "2026-10-04T17:00:00-03:00",
              "eventStatus": "https://schema.org/EventScheduled",
              "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-             "location": {"@type": "Place", "name": "Brasil", "address": {"@type": "PostalAddress", "addressLocality": "Curitiba", "addressRegion": "PR", "addressCountry": "BR"}},
+             "location": {"@type": "Place", "name": "Brasil", "address": {"@type": "PostalAddress", "addressCountry": "BR"}},
              "organizer": {"@type": "GovernmentOrganization", "name": "Tribunal Superior Eleitoral", "url": "https://www.tse.jus.br"}},
         ],
     }
@@ -152,7 +157,16 @@ def pagina(l):
     e = html.escape
     lat, lon = l["geo"]
     regiao = "BR" if l["tipo"] == "pais" else "BR-PR"
-    lugar_geo = "Curitiba" if l["tipo"] != "cidade" else l["nome"]
+    lugar_geo = {"pais": "Brasil", "estado": "Curitiba"}.get(l["tipo"], l["nome"])
+    if l["tipo"] == "pais":
+        palavras = ("apuração 2026, eleições 2026, apuração ao vivo, resultado eleição 2026, apuração presidente 2026, "
+                    "presidente por estado, resultado presidente por estado, TSE ao vivo, urnas apuradas, "
+                    + ", ".join(f"apuração {n}" for n in ESTADOS))
+    else:
+        palavras = (f"apuração 2026, eleições 2026, resultado eleição {l['nome']}, apuração {l['nome']}, apuração Paraná, "
+                    "apuração Curitiba, senador Paraná 2026, deputado federal Paraná, deputado estadual Paraná, "
+                    "presidente 2026, presidente por estado, TSE ao vivo")
+    linhas_estados = "".join(f"<tr><td>{n}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>" for n in ESTADOS)
     cs = cards(l)
     atual = ' aria-current="page"'
     nav = "\n".join(
@@ -168,7 +182,7 @@ def pagina(l):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{e(l['titulo'])}</title>
 <meta name="description" content="{e(l['descricao'])}">
-<meta name="keywords" content="apuração 2026, eleições 2026, resultado eleição {e(l['nome'])}, apuração {e(l['nome'])}, apuração Paraná, apuração Curitiba, senador Paraná 2026, deputado federal Paraná, deputado estadual Paraná, presidente 2026, TSE ao vivo">
+<meta name="keywords" content="{e(palavras)}">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta name="author" content="Juscelio Diaz">
 <meta name="theme-color" content="#E9EEF2" media="(prefers-color-scheme: light)">
@@ -240,14 +254,44 @@ function anuncioAdsterra(key, width, height){{
     <span><b id="total">0</b> no total</span>
   </div>
 
-  <main class="grid">
+  <div class="abas" role="tablist" aria-label="Visualização">
+    <button role="tab" id="tab-painel" aria-controls="aba-painel" aria-selected="true">Painel</button>
+    <button role="tab" id="tab-grafico" aria-controls="aba-grafico" aria-selected="false" tabindex="-1">Presidente por estado</button>
+  </div>
+
+  <main class="grid" id="aba-painel" role="tabpanel" aria-labelledby="tab-painel">
 {corpo}  </main>
+
+  <section class="grafico" id="aba-grafico" role="tabpanel" aria-labelledby="tab-grafico" hidden>
+    <div class="grafico-topo">
+      <div>
+        <h2>Presidente por estado</h2>
+        <p class="grafico-sub" id="gResumo">Carregando resultados dos 27 estados…</p>
+      </div>
+      <label class="ordem">Ordenar por
+        <select id="gOrdem">
+          <option value="vantagem">Vantagem do 1º colocado</option>
+          <option value="nome">Estado (A–Z)</option>
+          <option value="apurado">Mais apurado</option>
+        </select>
+      </label>
+    </div>
+    <ul class="legenda" id="gLegenda"></ul>
+    <div class="barras" id="gBarras" role="list"></div>
+    <div class="g-dica" id="gDica" role="tooltip" hidden></div>
+    <details class="g-tabela">
+      <summary>Ver como tabela</summary>
+      <div class="g-tabela-rolagem"><table id="gTabela"><thead><tr><th>Estado</th><th>% apurado</th><th>1º no Brasil</th><th>2º no Brasil</th><th>Outros</th></tr></thead><tbody>{linhas_estados}</tbody></table></div>
+    </details>
+    <p class="grafico-nota">Resultado da eleição para Presidente em todos os estados do Brasil: {", ".join(ESTADOS[:-1])} e {ESTADOS[-1]}. Percentuais sobre os votos válidos em cada estado. Dados oficiais do TSE, atualizados a cada minuto enquanto esta aba está aberta.</p>
+  </section>
 
   <noscript><p class="rodape">Ative o JavaScript para ver a apuração ao vivo.</p></noscript>
 </div>
 
 <script>window.PAGINA = {config};</script>
 <script src="/assets/painel.js"></script>
+<script src="/assets/grafico.js"></script>
 <!-- Adsterra -->
 <script data-cfasync="false" src="https://afders.org/1/1509e2503a8d75d315fd21393ebc4c13"></script>
 <script data-cfasync="false" src="https://bicea.org/14/e1dd02e019e5cd1f0d1ac25f7d4fbcfc"></script>
