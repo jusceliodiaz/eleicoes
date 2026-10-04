@@ -9,8 +9,6 @@ TSE = "https://resultados.tse.jus.br"
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        if self.path in ("/", ""):
-            self.path = "/painel-apuracao.html"
         if not self.path.startswith("/tse/"):
             return super().do_GET()
         url = TSE + self.path[4:].split("?")[0]

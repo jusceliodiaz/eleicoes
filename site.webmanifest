@@ -1,0 +1,14 @@
+{
+  "name": "Apuração Eleições 2026 – Paraná",
+  "short_name": "Apuração 2026",
+  "description": "Apuração ao vivo: Presidente, Senador e Deputados do Paraná.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#E9EEF2",
+  "theme_color": "#13233A",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

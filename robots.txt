@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jusceliodiaz.github.io/eleicoes/sitemap.xml

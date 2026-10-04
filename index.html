@@ -3,8 +3,95 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Painel de apuração</title>
+<title>Apuração 2026 ao vivo em Curitiba: Presidente, Senador e Deputados PR</title>
+<meta name="description" content="Acompanhe ao vivo a apuração das Eleições 2026 com dados oficiais do TSE: Presidente, Senador e Deputados federais e estaduais do Paraná. Atualiza a cada 30 segundos.">
+<meta name="keywords" content="apuração 2026, eleições 2026, resultado eleição Curitiba, apuração Paraná, senador Paraná 2026, deputado federal Paraná, deputado estadual Paraná, presidente 2026, TSE ao vivo">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="author" content="Juscelio Diaz">
+<meta name="theme-color" content="#E9EEF2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1A28" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://jusceliodiaz.github.io/eleicoes/">
+<link rel="alternate" hreflang="pt-BR" href="https://jusceliodiaz.github.io/eleicoes/">
+
+<!-- Geolocalização: Curitiba, Paraná, Brasil -->
+<meta name="geo.region" content="BR-PR">
+<meta name="geo.placename" content="Curitiba">
+<meta name="geo.position" content="-25.4284;-49.2733">
+<meta name="ICBM" content="-25.4284, -49.2733">
+<meta name="language" content="pt-BR">
+<meta name="distribution" content="global">
+
+<!-- Open Graph (WhatsApp, Facebook, LinkedIn) -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Apuração Eleições 2026">
+<meta property="og:title" content="Apuração 2026 ao vivo: Presidente, Senador e Deputados do Paraná">
+<meta property="og:description" content="Resultados oficiais do TSE atualizados a cada 30 segundos. Veja quem lidera em cada disputa, direto de Curitiba.">
+<meta property="og:url" content="https://jusceliodiaz.github.io/eleicoes/">
+<meta property="og:image" content="https://jusceliodiaz.github.io/eleicoes/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Painel de apuração das Eleições 2026: Presidente, Senador e Deputados do Paraná">
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Apuração 2026 ao vivo: Presidente, Senador e Deputados do Paraná">
+<meta name="twitter:description" content="Resultados oficiais do TSE atualizados a cada 30 segundos, direto de Curitiba.">
+<meta name="twitter:image" content="https://jusceliodiaz.github.io/eleicoes/og-image.png">
+
+<!-- Ícones e app -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+
+<!-- Dados estruturados -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://jusceliodiaz.github.io/eleicoes/#site",
+      "url": "https://jusceliodiaz.github.io/eleicoes/",
+      "name": "Apuração Eleições 2026",
+      "inLanguage": "pt-BR"
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://jusceliodiaz.github.io/eleicoes/#pagina",
+      "url": "https://jusceliodiaz.github.io/eleicoes/",
+      "name": "Apuração 2026 ao vivo em Curitiba: Presidente, Senador e Deputados PR",
+      "description": "Apuração ao vivo das Eleições 2026 com dados oficiais do TSE para Presidente, Senador e Deputados federais e estaduais do Paraná.",
+      "inLanguage": "pt-BR",
+      "isPartOf": {"@id": "https://jusceliodiaz.github.io/eleicoes/#site"},
+      "about": {"@id": "https://jusceliodiaz.github.io/eleicoes/#eleicao"},
+      "primaryImageOfPage": "https://jusceliodiaz.github.io/eleicoes/og-image.png",
+      "spatialCoverage": [
+        {"@type": "City", "name": "Curitiba", "containedInPlace": {"@type": "State", "name": "Paraná"}},
+        {"@type": "Country", "name": "Brasil"}
+      ]
+    },
+    {
+      "@type": "Event",
+      "@id": "https://jusceliodiaz.github.io/eleicoes/#eleicao",
+      "name": "Eleições Gerais 2026 – 1º turno",
+      "startDate": "2026-10-04T08:00:00-03:00",
+      "endDate": "2026-10-04T17:00:00-03:00",
+      "eventStatus": "https://schema.org/EventScheduled",
+      "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+      "location": {
+        "@type": "Place",
+        "name": "Paraná, Brasil",
+        "address": {"@type": "PostalAddress", "addressLocality": "Curitiba", "addressRegion": "PR", "addressCountry": "BR"}
+      },
+      "organizer": {"@type": "GovernmentOrganization", "name": "Tribunal Superior Eleitoral", "url": "https://www.tse.jus.br"}
+    }
+  ]
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -81,13 +168,20 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .msg{padding:10px 16px;border-top:1px solid var(--line);border-left:5px solid var(--err);font-size:.85rem;display:none}
 
 .rodape{margin-top:24px;font-size:.82rem;color:var(--muted)}
+.rodape a{color:inherit}
+.h1-sub{display:block;font-size:.45em;font-weight:600;color:var(--muted);letter-spacing:0;font-variation-settings:"wdth" 100}
+.sobre{margin-top:36px;max-width:760px;font-size:.95rem}
+.sobre h2{font-size:1.2rem;font-weight:800;margin:0 0 8px}
+.sobre h3{font-size:1rem;font-weight:750;margin:18px 0 4px}
+.sobre p{margin:0;color:var(--muted)}
+.sobre strong{color:var(--ink);font-weight:650}
 @media (max-width:520px){.cand .num{font-size:1.1rem}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Apuração Eleições 2026</h1>
+    <h1>Apuração Eleições 2026 <span class="h1-sub">Curitiba · Paraná · Brasil</span></h1>
     <div class="controls">
       <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Parado</span></div>
       <select id="modo" aria-label="Fonte dos dados">
@@ -109,7 +203,20 @@ button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
   <main class="grid" id="grid"></main>
 
-  <p class="rodape">Fonte: arquivos públicos de resultados.tse.jus.br. Atualiza a cada 30 segundos.</p>
+  <noscript><p class="rodape">Ative o JavaScript para ver a apuração ao vivo.</p></noscript>
+
+  <section class="sobre" aria-labelledby="sobre-titulo">
+    <h2 id="sobre-titulo">Apuração ao vivo das Eleições 2026 no Paraná</h2>
+    <p>Este painel mostra, em tempo real, quem lidera a apuração do 1º turno das Eleições 2026 para <strong>Presidente da República</strong>, <strong>Senador pelo Paraná</strong>, <strong>Deputado federal</strong> e <strong>Deputado estadual</strong>. Os números vêm dos arquivos públicos de resultados do Tribunal Superior Eleitoral (TSE) e são atualizados a cada 30 segundos, para quem acompanha de Curitiba, do Paraná ou de qualquer lugar do Brasil.</p>
+    <h3>Quando começa a apuração?</h3>
+    <p>A votação vai das 8h às 17h, no horário de Brasília, em todo o país. Os primeiros resultados aparecem logo depois do fechamento das urnas, às 17h.</p>
+    <h3>Quantas vagas o Paraná elege em 2026?</h3>
+    <p>Duas vagas para o Senado (em 2026 são renovados dois terços da Casa), 30 vagas de deputado federal e 54 de deputado estadual na Assembleia Legislativa do Paraná.</p>
+    <h3>Ser o mais votado garante a vaga de deputado?</h3>
+    <p>Não. Deputados são eleitos pelo sistema proporcional: as vagas são distribuídas pelo quociente eleitoral e partidário. O painel mostra os dois mais votados, e a indicação de eleito vem do próprio TSE ao fim da apuração.</p>
+  </section>
+
+  <footer class="rodape">Fonte: arquivos públicos de <a href="https://resultados.tse.jus.br" rel="noopener">resultados.tse.jus.br</a>. Atualiza a cada 30 segundos. Painel independente, sem vínculo com o TSE.</footer>
 </div>
 
 <script>
