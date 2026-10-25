@@ -12,7 +12,7 @@
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4;
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
-.wrap{min-height:100%;display:flex;flex-direction:column;gap:14px;padding:16px 18px 112px}
+.wrap{min-height:100%;display:flex;flex-direction:column;gap:14px;padding:16px 18px 96px}
 
 /* Faixa do topo: título, apuração e status */
 header{display:flex;justify-content:space-between;align-items:center;gap:6px 18px;flex-wrap:wrap}
@@ -49,22 +49,23 @@ h1 small{font-weight:500;color:var(--muted);text-transform:none;margin-left:6px}
 .tag{position:absolute;top:14px;right:14px;background:var(--lead);color:var(--panel);font-weight:800;font-size:.8rem;padding:4px 10px;border-radius:999px;text-transform:uppercase}
 
 /* Canto: previsão de vitória */
-.previsao{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));max-width:min(360px,calc(100vw - 36px));
-  background:var(--ink);color:var(--bg);border-radius:14px;padding:12px 16px;box-shadow:0 8px 28px rgba(0,0,0,.25);font-size:.85rem}
+.previsao{position:fixed;left:18px;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));
+  display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;
+  background:var(--ink);color:var(--bg);border-radius:14px;padding:14px 20px;box-shadow:0 8px 28px rgba(0,0,0,.25);font-size:.95rem}
 .pv-chip{display:inline-block;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;background:var(--muted);color:var(--ink)}
 .previsao.ok .pv-chip{background:var(--lead);color:var(--panel)}
 .previsao.indef .pv-chip{background:var(--urna);color:#13233A}
-#pvTxt{display:block;margin-top:6px}
-#pvTxt b{display:block;font-size:1.15rem;font-weight:850}
-.pv-proj{display:block;opacity:.8;margin-top:2px;font-variant-numeric:tabular-nums}
+#pvTxt{display:flex;align-items:baseline;gap:4px 18px;flex-wrap:wrap}
+#pvTxt b{font-size:1.3rem;font-weight:850}
+.pv-proj{opacity:.8;font-variant-numeric:tabular-nums}
 
 @media (max-width:640px){
-  .wrap{padding:12px 10px 120px}
+  .wrap{padding:12px 10px 150px}
   .cands{gap:8px;min-height:60vh}
   .cand{border-radius:14px;border-top-width:6px}
   .quem{flex-direction:column;align-items:flex-start;gap:6px}
   .quem img{width:44px;height:44px}
-  .previsao{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-width:none}
+  .previsao{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));padding:12px 16px}
 }
 @media (prefers-reduced-motion:reduce){.dot.live{animation:none}.fill{transition:none!important}}
 :focus-visible{outline:3px solid var(--urna);outline-offset:2px}
