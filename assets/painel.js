@@ -3,8 +3,8 @@
    Pelo proxy /tse/ (Vercel ou servidor.py) todos saem do mesmo IP e o TSE bloqueia com 429,
    então ele fica só como reserva. */
 const ELEICAO = "6258", CARGO = "0001";
-const INTERVALO_SEG = 30;
-const PREVISAO_SEG = 90; // 28 arquivos por leitura: mais espaçado para não pesar no TSE
+const INTERVALO_SEG = 60;
+const PREVISAO_SEG = 60; // 28 arquivos por leitura
 const $ = id => document.getElementById(id);
 
 const fmtInt = n => Number(n || 0).toLocaleString("pt-BR");

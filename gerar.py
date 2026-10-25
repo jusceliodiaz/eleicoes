@@ -130,7 +130,6 @@ def pagina(l):
     <span class="pv-chip" id="pvChip">Previsão</span>
     <span id="pvTxt">Calculando…</span>
   </aside>
-  <p class="nota">Dados oficiais do TSE, atualizados a cada 30 segundos. Previsão: em cada estado, os votos que faltam são distribuídos na proporção já apurada ali. É uma tendência, não um resultado oficial.</p>
 
   <noscript><p class="msg">Ative o JavaScript para ver a apuração ao vivo.</p></noscript>
 </div>
