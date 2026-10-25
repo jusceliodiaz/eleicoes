@@ -1,50 +1,25 @@
 """Gera a página do painel (index.html), o sitemap.xml e o robots.txt.
 
 Uso: python3 gerar.py
-Edite SITE, GA_ID ou ESTADOS e rode de novo.
+Edite SITE ou GA_ID e rode de novo.
 """
 import json, os, html, hashlib
 
 SITE = "https://eleicoesbrasil.vercel.app"
 GA_ID = "G-25D1149GZ8"            # Google Analytics 4, ex.: "G-ABC123XYZ". Vazio = sem Analytics.
-HOJE = "2026-10-04"
+HOJE = "2026-10-25"
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
-# Códigos do TSE: eleição federal 6257 (Presidente) e estadual 6259 (Governador, Senador e Deputados).
-# Uma página só: as tags trocam o estado no navegador (?uf=sp); a lista de cards e os códigos ficam em painel.js.
+# Só Presidente, 2º turno (eleição federal 6258 do TSE); o código fica em painel.js.
 PAGINA = {"slug": "", "nome": "Brasil", "geo": (-15.7939, -47.8828),
-          "titulo": "Apuração Eleições 2026 ao vivo: Presidente, Governador, Senador e Deputados por estado",
-          "descricao": "Apuração ao vivo das Eleições 2026 com dados oficiais do TSE: Presidente, Governador, Senador, Deputado federal e estadual nos 27 estados, urnas apuradas e previsão de término.",
-          "h1": "Apuração Eleições 2026", "sub": "Brasil, ao vivo"}
-ESTADOS = {"ac": "Acre", "al": "Alagoas", "ap": "Amapá", "am": "Amazonas", "ba": "Bahia", "ce": "Ceará",
-           "df": "Distrito Federal", "es": "Espírito Santo", "go": "Goiás", "ma": "Maranhão", "mt": "Mato Grosso",
-           "ms": "Mato Grosso do Sul", "mg": "Minas Gerais", "pa": "Pará", "pb": "Paraíba", "pr": "Paraná",
-           "pe": "Pernambuco", "pi": "Piauí", "rj": "Rio de Janeiro", "rn": "Rio Grande do Norte",
-           "rs": "Rio Grande do Sul", "ro": "Rondônia", "rr": "Roraima", "sc": "Santa Catarina",
-           "sp": "São Paulo", "se": "Sergipe", "to": "Tocantins"}
-CARGOS = [("pres", "Presidente"), ("gov", "Governador"), ("sen", "Senador"),
-          ("depf", "Deputado federal"), ("depe", "Deputado estadual")]
+          "titulo": "Apuração Presidente 2026 ao vivo: 2º turno",
+          "descricao": "Apuração ao vivo do 2º turno da eleição para Presidente 2026 com dados oficiais do TSE: votos de cada candidato, urnas apuradas e previsão de vitória.",
+          "h1": "Presidente 2026", "sub": "2º turno, ao vivo"}
 
 
 def url(l):
     return f"{SITE}/{l['slug']}/" if l["slug"] else f"{SITE}/"
-
-
-def card_html(id, titulo):
-    return f"""    <section class="painel" data-card="{id}"{"" if id == "pres" else " hidden"}>
-      <div class="painel-head" aria-live="polite">
-        <h2><span data-k="titulo">{titulo}</span><small data-k="escopo">Brasil</small></h2>
-        <div class="pct" data-k="pct">0,00<small>% das seções apuradas</small></div>
-        <div class="track"><div class="fill" data-k="pctBar" style="width:0%"></div></div>
-        <div class="urnas" data-k="urnas"></div>
-        <div class="meta" data-k="atualizado">Carregando resultados do TSE…</div>
-      </div>
-      <div class="msg" data-k="msg" role="alert"></div>
-      <div class="cands" data-k="cands"><div class="vazio">Aguardando dados.</div></div>
-      <div class="outros" data-k="outros"></div>
-    </section>
-"""
 
 
 def json_ld(l):
@@ -56,8 +31,8 @@ def json_ld(l):
              "inLanguage": "pt-BR", "isPartOf": {"@id": f"{SITE}/#site"}, "about": {"@id": f"{SITE}/#eleicao"},
              "primaryImageOfPage": f"{SITE}/og-image.png", "dateModified": HOJE,
              "spatialCoverage": {"@type": "Country", "name": "Brasil"}},
-            {"@type": "Event", "@id": f"{SITE}/#eleicao", "name": "Eleições Gerais 2026 – 1º turno",
-             "startDate": "2026-10-04T08:00:00-03:00", "endDate": "2026-10-04T17:00:00-03:00",
+            {"@type": "Event", "@id": f"{SITE}/#eleicao", "name": "Eleições Gerais 2026 – 2º turno",
+             "startDate": "2026-10-25T08:00:00-03:00", "endDate": "2026-10-25T17:00:00-03:00",
              "eventStatus": "https://schema.org/EventScheduled",
              "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
              "location": {"@type": "Place", "name": "Brasil", "address": {"@type": "PostalAddress", "addressCountry": "BR"}},
@@ -85,18 +60,8 @@ def analytics():
 def pagina(l):
     e = html.escape
     lat, lon = l["geo"]
-    nomes = list(ESTADOS.values())
-    palavras = ("apuração 2026, eleições 2026, apuração ao vivo, resultado eleição 2026, apuração presidente 2026, "
-                "governador 2026, senador 2026, deputado federal 2026, deputado estadual 2026, resultado por estado, "
-                "TSE ao vivo, urnas apuradas, " + ", ".join(f"apuração {n}" for n in nomes))
-    linhas_estados = "".join(f"<tr><td>{n}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>" for n in sorted(nomes))
-    nav = "\n".join(['      <li><a href="/" data-uf="br" aria-current="page">Brasil</a></li>'] + [
-        f'      <li><a href="/?uf={uf}" data-uf="{uf}" title="{e(n)}" aria-label="{e(n)}">{uf.upper()}</a></li>'
-        for uf, n in sorted(ESTADOS.items())])
-    corpo = "".join(card_html(id, t) for id, t in CARGOS) + """    <p class="dica-estado" id="dicaEstado">Escolha um estado acima para ver Governador, Senador e Deputados.</p>
-"""
-    opcoes_cargo = "".join(f'<option value="{id}">{t}</option>' for id, t in CARGOS)
-    lista_estados = ", ".join(nomes[:-1]) + " e " + nomes[-1]
+    palavras = ("apuração presidente 2026, 2º turno 2026, segundo turno presidente, eleições 2026, apuração ao vivo, "
+                "resultado eleição 2026, TSE ao vivo, urnas apuradas, previsão de vitória")
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -148,83 +113,29 @@ def pagina(l):
 <body>
 <div class="wrap">
   <header>
-    <h1>{e(l['h1'])} <span class="h1-sub" id="sub">{e(l['sub'])}</span></h1>
-    <div class="controls">
-      <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Carregando</span></div>
-      <button class="primary" id="toggle">Pausar</button>
+    <h1>{e(l['h1'])} <small>{e(l['sub'])}</small></h1>
+    <div class="apurado">
+      <span><b id="pctApurado">0,00%</b> apurado</span>
+      <span id="secoes"></span>
+      <span id="hora"></span>
+      <span class="status"><span class="dot" id="dot"></span><span id="statusTxt">Carregando</span></span>
     </div>
   </header>
+  <div class="track"><div class="fill" id="barraApurado" style="width:0%"></div></div>
+  <p class="msg" id="msg" role="alert" hidden></p>
 
-  <nav aria-label="Apuração por estado">
-    <ul class="locais estados">
-{nav}
-    </ul>
-  </nav>
+  <main class="cands" id="cands" aria-live="polite"></main>
 
-  <div class="contador" aria-live="off">
-    <span class="ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" class="ring-bg"/><circle cx="18" cy="18" r="15" class="ring-fg" id="ringFg"/></svg></span>
-    <span><b id="proxima">—</b> para a próxima atualização</span>
-    <span class="sep"></span>
-    <span><b id="ritmo">0</b> atualizações por minuto</span>
-    <span class="sep"></span>
-    <span><b id="total">0</b> no total</span>
-  </div>
+  <aside class="previsao" id="previsao" aria-live="polite" aria-label="Previsão de vitória">
+    <span class="pv-chip" id="pvChip">Previsão</span>
+    <span id="pvTxt">Calculando…</span>
+  </aside>
+  <p class="nota">Dados oficiais do TSE, atualizados a cada 30 segundos. Previsão: em cada estado, os votos que faltam são distribuídos na proporção já apurada ali. É uma tendência, não um resultado oficial.</p>
 
-  <div class="abas" role="tablist" aria-label="Visualização">
-    <button role="tab" id="tab-painel" aria-controls="aba-painel" aria-selected="true">Painel</button>
-    <button role="tab" id="tab-grafico" aria-controls="aba-grafico" aria-selected="false" tabindex="-1">Por estado</button>
-    <button role="tab" id="tab-previsao" aria-controls="aba-previsao" aria-selected="false" tabindex="-1">Previsão 1º e 2º turno</button>
-  </div>
-
-  <main class="grid" id="aba-painel" role="tabpanel" aria-labelledby="tab-painel">
-{corpo}  </main>
-
-  <section class="grafico" id="aba-grafico" role="tabpanel" aria-labelledby="tab-grafico" hidden>
-    <div class="grafico-topo">
-      <div>
-        <h2 id="gTitulo">Presidente por estado</h2>
-        <p class="grafico-sub" id="gResumo">Carregando resultados dos 27 estados…</p>
-      </div>
-      <label class="ordem">Cargo
-        <select id="gCargo">{opcoes_cargo}</select>
-      </label>
-      <label class="ordem">Ordenar por
-        <select id="gOrdem">
-          <option value="vantagem">Vantagem do 1º colocado</option>
-          <option value="nome">Estado (A–Z)</option>
-          <option value="apurado">Mais apurado</option>
-        </select>
-      </label>
-    </div>
-    <ul class="legenda" id="gLegenda"></ul>
-    <div class="barras" id="gBarras" role="list"></div>
-    <div class="g-dica" id="gDica" role="tooltip" hidden></div>
-    <details class="g-tabela">
-      <summary>Ver como tabela</summary>
-      <div class="g-tabela-rolagem"><table id="gTabela"><thead><tr><th>Estado</th><th>% apurado</th><th>1º</th><th>2º</th><th>Outros</th></tr></thead><tbody>{linhas_estados}</tbody></table></div>
-    </details>
-    <p class="grafico-nota">Resultado da eleição para Presidente, Governador, Senador e Deputados em todos os estados do Brasil: {lista_estados}. Percentuais sobre os votos válidos em cada estado. Clique num estado para abrir o painel dele. Dados oficiais do TSE, atualizados a cada minuto enquanto esta aba está aberta.</p>
-  </section>
-
-  <section class="grafico previsao" id="aba-previsao" role="tabpanel" aria-labelledby="tab-previsao" hidden>
-    <h2>Presidente: projeção do resultado final</h2>
-    <p class="grafico-sub" id="pvPresResumo">Carregando resultados dos 27 estados…</p>
-    <div class="pv-veredito" id="pvPresVeredito" aria-live="polite"></div>
-    <div class="pv-barras" id="pvPresBarras"></div>
-    <p class="grafico-nota">Como calculamos: em cada estado, os votos que faltam apurar são distribuídos na mesma proporção dos votos já apurados naquele estado, e somamos o resultado do país (sem o exterior). Isso corrige o fato de alguns estados apurarem mais rápido que outros. É uma tendência, não um resultado oficial.</p>
-
-    <h2 class="pv-sec">Governador: 1º ou 2º turno?</h2>
-    <p class="grafico-sub" id="pvGovResumo">Carregando…</p>
-    <div class="pv-gov" id="pvGovLista"></div>
-    <p class="grafico-nota">Vence no 1º turno quem tiver mais de 50% dos votos válidos. Com pouca apuração, uma margem pequena sobre 50% ainda pode virar, por isso marcamos como “indefinido”. O 2º turno será em 25 de outubro de 2026. Senado e deputados não têm 2º turno.</p>
-  </section>
-
-  <noscript><p class="rodape">Ative o JavaScript para ver a apuração ao vivo.</p></noscript>
+  <noscript><p class="msg">Ative o JavaScript para ver a apuração ao vivo.</p></noscript>
 </div>
 
 <script src="{v('assets/painel.js')}"></script>
-<script src="{v('assets/grafico.js')}"></script>
-<script src="{v('assets/previsao.js')}"></script>
 </body>
 </html>
 """

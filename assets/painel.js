@@ -1,60 +1,18 @@
-/* Painel de apuração. A página já traz o HTML dos cards (data-card="id"); este script escolhe
-   o estado (tags ?uf=sp), busca os dados no TSE e preenche. */
-const MIN_MOSTRAR = 2; // cargos de 1 vaga mostram 1º e 2º (2º turno); os demais, uma linha por vaga
+/* Apuração do 2º turno para Presidente: um card por candidato e, no canto, a previsão de vitória.
+   O navegador busca direto no TSE (que libera CORS): cada visitante usa o próprio IP e o cache do TSE.
+   Pelo proxy /tse/ (Vercel ou servidor.py) todos saem do mesmo IP e o TSE bloqueia com 429,
+   então ele fica só como reserva. */
+const ELEICAO = "6258", CARGO = "0001";
 const INTERVALO_SEG = 30;
+const PREVISAO_SEG = 90; // 28 arquivos por leitura: mais espaçado para não pesar no TSE
 const $ = id => document.getElementById(id);
 
 const fmtInt = n => Number(n || 0).toLocaleString("pt-BR");
 const toNum = s => typeof s === "number" ? s : parseFloat(String(s || "0").replace(/\./g,"").replace(",", ".")) || 0;
 const fmtPct = n => n.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+const UFS = ["ac","al","am","ap","ba","ce","df","es","go","ma","mg","ms","mt","pa","pb","pe","pi","pr",
+             "rj","rn","ro","rr","rs","sc","se","sp","to"];
 
-const NOMES_UF = {
-  ac:"Acre", al:"Alagoas", am:"Amazonas", ap:"Amapá", ba:"Bahia", ce:"Ceará", df:"Distrito Federal",
-  es:"Espírito Santo", go:"Goiás", ma:"Maranhão", mg:"Minas Gerais", ms:"Mato Grosso do Sul",
-  mt:"Mato Grosso", pa:"Pará", pb:"Paraíba", pe:"Pernambuco", pi:"Piauí", pr:"Paraná",
-  rj:"Rio de Janeiro", rn:"Rio Grande do Norte", ro:"Rondônia", rr:"Roraima", rs:"Rio Grande do Sul",
-  sc:"Santa Catarina", se:"Sergipe", sp:"São Paulo", to:"Tocantins"
-};
-/* Cargo de cada card por UF. No DF a Câmara Legislativa é distrital (cargo 0008). */
-function cargoDe(id, uf){
-  return {pres: {eleicao:"6257", cargo:"0001", titulo:"Presidente"},
-          gov:  {eleicao:"6259", cargo:"0003", titulo:"Governador"},
-          sen:  {eleicao:"6259", cargo:"0005", titulo:"Senador"},
-          depf: {eleicao:"6259", cargo:"0006", titulo:"Deputado federal"},
-          depe: uf === "df" ? {eleicao:"6259", cargo:"0008", titulo:"Deputado distrital"}
-                            : {eleicao:"6259", cargo:"0007", titulo:"Deputado estadual"}}[id];
-}
-
-let UF = "br", CARDS = [], geracao = 0;
-function montarCards(){
-  const nomeLocal = UF === "br" ? "Brasil" : NOMES_UF[UF];
-  CARDS = [];
-  document.querySelectorAll("[data-card]").forEach(root => {
-    const id = root.dataset.card, ativo = UF !== "br" || id === "pres";
-    root.hidden = !ativo;
-    if (!ativo) return;
-    const c = {id, uf: UF, ...cargoDe(id, UF), el: k => root.querySelector(`[data-k="${k}"]`)};
-    c.el("titulo").textContent = c.titulo;
-    c.el("escopo").textContent = nomeLocal;
-    c.el("pct").firstChild.nodeValue = "0,00";
-    c.el("pctBar").style.width = "0%";
-    c.el("urnas").innerHTML = "";
-    c.el("atualizado").textContent = "Carregando resultados do TSE…";
-    c.el("cands").innerHTML = '<div class="vazio">Aguardando dados.</div>';
-    c.el("outros").innerHTML = "";
-    root.setAttribute("aria-label", `${c.titulo}, ${nomeLocal}`);
-    CARDS.push(c);
-  });
-  $("dicaEstado").hidden = UF !== "br";
-  $("sub").textContent = `${nomeLocal}, ao vivo`;
-  document.title = UF === "br" ? TITULO_BASE : `Apuração ${nomeLocal} 2026 ao vivo: Governador, Senador e Deputados`;
-  document.querySelectorAll("[data-uf]").forEach(a => a.dataset.uf === UF ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
-}
-const TITULO_BASE = document.title;
-
-/* O navegador busca direto no TSE (que libera CORS): cada visitante usa o próprio IP e o cache do TSE.
-   Pelo proxy /tse/ (Vercel ou servidor.py) todos saem do mesmo IP e o TSE bloqueia com 429,
-   então ele fica só como reserva. Sem "?t=": o TSE já manda max-age curto e serve do cache dele. */
 const BASE_TSE = "https://resultados.tse.jus.br";
 const PROXY_TSE = location.protocol.startsWith("http") ? "/tse" : null;
 async function buscarTSE(url){
@@ -66,197 +24,129 @@ async function buscarTSE(url){
   }
   return fetch(url.replace(BASE_TSE, PROXY_TSE));
 }
-function buildUrl(c){
-  return `${BASE_TSE}/oficial/ele2026/${c.eleicao}/dados/${c.uf}/${c.uf}-c${c.cargo}-e${c.eleicao.padStart(6,"0")}-u.json`;
-}
+const urlDados = uf => `${BASE_TSE}/oficial/ele2026/${ELEICAO}/dados/${uf}/${uf}-c${CARGO}-e${ELEICAO.padStart(6,"0")}-u.json`;
+const urlFoto = sq => `${BASE_TSE}/oficial/ele2026/${ELEICAO}/fotos/br/${sq}.jpeg`;
+const SEM_FOTO = new Set(["13"]); // números dos candidatos que aparecem sem foto (Lula)
 
-/* ---------- Normaliza o arquivo unificado do TSE (-u.json, formato de 2026) ---------- */
-function normalize(d){
+/* Arquivo unificado do TSE (-u.json) -> seções, eleitorado e candidatos. */
+function ler(d){
   const cands = [];
   (d.carg || []).forEach(cg => (cg.agr || []).forEach(ag => (ag.par || []).forEach(pa => (pa.cand || []).forEach(c => cands.push({
-    nome: c.nmu || c.nm || "Sem nome",
-    partido: pa.sg || "",
-    votos: toNum(c.vap),
-    pct: toNum(c.pvap),
-    eleito: (c.e === "s" || /^eleit/i.test(c.st || "")),
-    segundo: /2º turno/i.test(c.st || "")
+    n: c.n, sq: c.sqcand, nome: c.nmu || c.nm || "Sem nome", partido: pa.sg || "",
+    votos: toNum(c.vap), pct: toNum(c.pvap), eleito: c.e === "s" || /^eleit/i.test(c.st || "")
   })))));
-  const s = d.s || {}, v = d.v || {}, e = d.e || {};
+  const s = d.s || {}, e = d.e || {};
   return {
-    vagas: toNum(((d.carg || [])[0] || {}).nv) || 1,
-    pst: toNum(s.pst),
-    secoes: {total: toNum(s.ts), apuradas: toNum(s.st), faltam: toNum(s.snt)},
-    quando: dataTSE(d.dg, d.hg),
-    cands,
-    brancos: {v: toNum(v.vb), p: toNum(v.pvb)},
-    nulos: {v: toNum(v.tvn), p: toNum(v.ptvn)},
-    abst: {v: toNum(e.a), p: toNum(e.pa)},
-    hora: d.hg ? `${d.dg || ""} ${d.hg}`.trim() : null
+    pst: toNum(s.pst), te: toNum(e.te), est: toNum(e.est),
+    secoes: {total: toNum(s.ts), apuradas: toNum(s.st)},
+    hora: d.hg || null, cands, validos: cands.reduce((t, c) => t + c.votos, 0)
   };
 }
-
-/* Data e hora do TSE vêm no horário de Brasília ("04/10/2026", "18:12:13"). */
-function dataTSE(dg, hg){
-  const m = /^(\d\d)\/(\d\d)\/(\d{4})$/.exec(dg || "");
-  if (!m || !hg) return null;
-  const t = Date.parse(`${m[3]}-${m[2]}-${m[1]}T${hg}-03:00`);
-  return isNaN(t) ? null : t;
+async function buscar(uf){
+  const res = await buscarTSE(urlDados(uf));
+  if (!res.ok) throw new Error(
+    res.status === 404 ? "O TSE ainda não publicou os resultados (404)."
+    : res.status === 429 ? "O TSE está limitando os acessos agora (429). Tentando de novo em instantes."
+    : `O TSE respondeu com erro ${res.status}.`);
+  return ler(await res.json());
 }
 
-/* ---------- Previsão de término ----------
-   Ritmo = seções apuradas por minuto entre leituras do TSE (janela de até 10 min).
-   Sem histórico ainda, usa a média desde o fechamento das urnas (17h de Brasília). */
-const FECHAMENTO = Date.parse("2026-10-04T17:00:00-03:00");
-const JANELA_MS = 10 * 60000;
-function ritmoPorMin(c, r){
-  if (!r.quando) return null;
-  c.amostras = (c.amostras || []).filter(a => a.t < r.quando && r.quando - a.t <= JANELA_MS);
-  const ant = c.amostras[0];
-  c.amostras.push({t: r.quando, st: r.secoes.apuradas});
-  if (ant && r.quando - ant.t >= 60000 && r.secoes.apuradas > ant.st)
-    return (r.secoes.apuradas - ant.st) / ((r.quando - ant.t) / 60000);
-  const desde = (r.quando - FECHAMENTO) / 60000;
-  return desde > 5 && r.secoes.apuradas > 0 ? r.secoes.apuradas / desde : null;
-}
-function fmtDuracao(min){
-  if (min < 1) return "menos de 1 min";
-  const h = Math.floor(min / 60), m = Math.round(min % 60);
-  return h ? `${h}h${String(m).padStart(2,"0")}` : `${m} min`;
-}
-const fmtHora = t => new Date(t).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit", timeZone:"America/Sao_Paulo"});
-function textoPrevisao(c, r){
-  const {total, faltam} = r.secoes;
-  if (!total) return "";
-  if (!faltam) return "Apuração concluída";
-  const ritmo = ritmoPorMin(c, r);
-  if (!ritmo) return "Previsão de término: calculando…";
-  const min = faltam / ritmo;
-  return `Previsão de término: <b>~${fmtDuracao(min)}</b> (por volta das ${fmtHora(r.quando + min*60000)}) · ${fmtInt(Math.round(ritmo))} urnas/min`;
-}
-
-/* ---------- Render ---------- */
-function render(c, r){
-  c.el("pct").firstChild.nodeValue = fmtPct(r.pst);
-  c.el("pctBar").style.width = r.pst + "%";
-  const u = r.secoes;
-  c.el("urnas").innerHTML = u.total ? `<div><b>${fmtInt(u.apuradas)}</b>urnas apuradas</div>
-    <div><b>${fmtInt(u.total)}</b>total de urnas</div>
-    <div><b>${fmtInt(u.faltam)}</b>faltam</div>
-    <div class="eta">${textoPrevisao(c, r)}</div>` : "";
-  c.el("atualizado").textContent = r.hora ? `Atualizado às ${r.hora}` : "Atualizado agora";
-  c.el("escopo").textContent = (UF === "br" ? "Brasil" : NOMES_UF[UF]) + (r.vagas > 1 ? ` · ${r.vagas} vagas` : "");
-  const list = [...r.cands].sort((a,b)=>b.votos-a.votos).slice(0, Math.max(r.vagas, MIN_MOSTRAR));
-  const max = Math.max(...list.map(x=>x.pct), 1);
-  const box = c.el("cands");
-  const topo = box.scrollTop;
-  box.innerHTML = "";
-  box.classList.toggle("rolagem", list.length > MIN_MOSTRAR);
-  list.forEach((x,i) => {
-    const el = document.createElement("div");
-    el.className = "cand" + (i===0 ? " lead" : "");
-    const tag = x.eleito ? '<span class="tag">Eleito</span>' : x.segundo ? '<span class="tag">2º turno</span>' : "";
-    el.innerHTML = `<span class="pos">${i+1}º</span>
-      <span><span class="nome"></span><span class="partido"></span>${tag}</span>
-      <span class="num">${fmtPct(x.pct)}%<span class="votos">${fmtInt(x.votos)} votos</span></span>
-      <div class="bar"><div class="fill" style="width:${x.pct/max*100}%"></div></div>`;
-    el.querySelector(".nome").textContent = x.nome;
-    el.querySelector(".partido").textContent = x.partido;
-    box.appendChild(el);
+/* ---------- Cards ----------
+   Ordem fixa pelo número do candidato, para os cards não trocarem de lado quando a liderança virar. */
+let ultimo = null;
+function desenharCards(r){
+  const cands = [...r.cands].sort((a, b) => a.n - b.n);
+  const lider = Math.max(...cands.map(c => c.votos));
+  $("pctApurado").textContent = fmtPct(r.pst) + "%";
+  $("barraApurado").style.width = r.pst + "%";
+  $("secoes").textContent = `${fmtInt(r.secoes.apuradas)} de ${fmtInt(r.secoes.total)} urnas`;
+  $("hora").textContent = r.hora ? `Atualizado às ${r.hora}` : "";
+  const box = $("cands");
+  if (box.children.length !== cands.length) box.innerHTML = cands.map((_, i) => `
+    <section class="cand s${i + 1}">
+      <div class="quem"><img alt="" width="56" height="56"><span><b class="nome"></b><small class="partido"></small></span></div>
+      <div class="pct"><span class="v">0,00</span><small>%</small></div>
+      <div class="votos"><b>0</b> votos</div>
+      <div class="trilho"><div class="fill"></div></div>
+      <span class="tag" hidden>Eleito</span>
+    </section>`).join("");
+  cands.forEach((c, i) => {
+    const el = box.children[i];
+    el.classList.toggle("lead", c.votos === lider && c.votos > 0);
+    el.setAttribute("aria-label", `${c.nome} (${c.partido}): ${fmtPct(c.pct)}%, ${fmtInt(c.votos)} votos`);
+    const img = el.querySelector("img");
+    if (SEM_FOTO.has(c.n)){ img.hidden = true; img.removeAttribute("src"); }
+    else if (img.dataset.sq !== c.sq){
+      img.dataset.sq = c.sq;
+      img.hidden = false;
+      img.onerror = () => { img.hidden = true; };
+      img.src = urlFoto(c.sq);
+    }
+    el.querySelector(".nome").textContent = c.nome;
+    el.querySelector(".partido").textContent = c.partido;
+    el.querySelector(".pct .v").textContent = fmtPct(c.pct);
+    el.querySelector(".votos b").textContent = fmtInt(c.votos);
+    el.querySelector(".fill").style.width = c.pct + "%";
+    el.querySelector(".tag").hidden = !c.eleito;
   });
-  if (list.length > MIN_MOSTRAR){
-    const dica = document.createElement("div");
-    dica.className = "lista-dica";
-    dica.textContent = `Os ${list.length} mais votados (nº de vagas) · role para ver`;
-    box.prepend(dica);
-  }
-  box.scrollTop = topo;
-  c.el("outros").innerHTML = [["Brancos",r.brancos],["Nulos",r.nulos],["Abstenções",r.abst]]
-    .map(([n,o]) => `<div><b>${fmtPct(o.p)}%</b><span>${n}: ${fmtInt(Math.round(o.v))}</span></div>`).join("");
 }
-function showMsg(c, t){ const m = c.el("msg"); m.textContent = t || ""; m.style.display = t ? "block" : "none"; }
-function setStatus(kind, txt){ $("dot").className = "dot " + kind; $("statusTxt").textContent = txt; }
 
-/* ---------- Contador de atualizações ---------- */
-let proximaEm = null, totalAtual = 0, historico = [], relogio = null, timer = null;
-const CIRC = 94.25;
-function registrarAtualizacao(){
-  totalAtual++;
-  const agora = Date.now();
-  historico.push(agora);
-  historico = historico.filter(t => agora - t <= 60000);
-  $("total").textContent = fmtInt(totalAtual);
-  $("ritmo").textContent = historico.length;
+/* ---------- Previsão de vitória ----------
+   Em cada estado, os votos que faltam são distribuídos na proporção já apurada naquele estado
+   (corrige estados que apuram mais rápido); soma-se o país, sem o exterior. */
+const margemIncerta = pst => Math.max(0.3, 6 * (1 - pst / 100));
+function projetar(br, estados){
+  const partNac = {};
+  br.cands.forEach(c => { partNac[c.n] = br.validos ? c.votos / br.validos : 0; });
+  const validosPorEleitor = estados.reduce((t, r) => t + (r ? r.validos : 0), 0) /
+                            Math.max(1, estados.reduce((t, r) => t + (r ? r.est : 0), 0));
+  const proj = {};
+  br.cands.forEach(c => { proj[c.n] = 0; });
+  estados.forEach(r => {
+    if (!r) return;
+    const faltamValidos = Math.max(0, r.te - r.est) * (r.est ? r.validos / r.est : validosPorEleitor);
+    r.cands.forEach(c => {
+      const parte = r.validos ? c.votos / r.validos : (partNac[c.n] || 0);
+      proj[c.n] = (proj[c.n] || 0) + c.votos + faltamValidos * parte;
+    });
+  });
+  const total = Object.values(proj).reduce((t, v) => t + v, 0) || 1;
+  return br.cands.map(c => ({...c, projPct: proj[c.n] / total * 100})).sort((a, b) => b.projPct - a.projPct);
 }
-function atualizarRelogio(){
-  if (!timer || !proximaEm){ $("proxima").textContent = "—"; $("ringFg").style.strokeDashoffset = CIRC; return; }
-  const rest = Math.max(0, Math.ceil((proximaEm - Date.now())/1000));
-  const m = Math.floor(rest/60), s = rest % 60;
-  $("proxima").textContent = m ? `${m}min ${String(s).padStart(2,"0")}s` : `${s}s`;
-  $("ringFg").style.strokeDashoffset = CIRC * (rest / INTERVALO_SEG);
-  const agora = Date.now();
-  historico = historico.filter(t => agora - t <= 60000);
-  $("ritmo").textContent = historico.length;
+function desenharPrevisao(br, estados){
+  const box = $("previsao");
+  const [a, b] = projetar(br, estados);
+  if (!a || !b || !br.validos){ box.className = "previsao"; $("pvChip").textContent = "Previsão"; $("pvTxt").textContent = "Aguardando votos apurados."; return; }
+  const oficial = br.cands.find(c => c.eleito);
+  const [chip, tipo] = oficial ? ["Eleito", "ok"]
+    : Math.abs(a.projPct - 50) < margemIncerta(br.pst) ? ["Indefinido", "indef"] : ["Tendência de vitória", "ok"];
+  box.className = "previsao " + tipo;
+  $("pvChip").textContent = chip;
+  const quem = oficial || a;
+  $("pvTxt").innerHTML = `<b></b><span class="pv-proj"></span>`;
+  $("pvTxt").querySelector("b").textContent = `${quem.nome} (${quem.partido})`;
+  $("pvTxt").querySelector(".pv-proj").textContent = oficial ? "Confirmado pelo TSE"
+    : `Projeção final: ${a.nome} ${fmtPct(a.projPct)}% × ${b.nome} ${fmtPct(b.projPct)}%`;
 }
 
 /* ---------- Loop ---------- */
-async function carregar(c){
-  const g = geracao;
+function setStatus(kind, txt){ $("dot").className = "dot " + kind; $("statusTxt").textContent = txt; }
+function showMsg(t){ $("msg").textContent = t || ""; $("msg").hidden = !t; }
+async function atualizar(){
   try{
-    const res = await buscarTSE(buildUrl(c));
-    if (!res.ok) throw new Error(
-      res.status === 404 ? "O TSE ainda não publicou este arquivo (404)."
-      : res.status === 429 ? "O TSE está limitando os acessos agora (429). Tentando de novo na próxima atualização."
-      : `O TSE respondeu com erro ${res.status}.`);
-    const dados = await res.json();
-    if (g !== geracao) return true; // o estado mudou enquanto esperava
-    render(c, normalize(dados));
-    showMsg(c, "");
-    return true;
+    ultimo = await buscar("br");
+    desenharCards(ultimo);
+    showMsg("");
+    setStatus("live", "Ao vivo");
   }catch(e){
-    showMsg(c, e.message.includes("Failed to fetch") || e.name === "TypeError"
-      ? "Não foi possível falar com o TSE agora. Tentando de novo na próxima atualização."
-      : e.message);
-    return false;
+    showMsg(e.name === "TypeError" ? "Não foi possível falar com o TSE agora. Tentando de novo em instantes." : e.message);
+    setStatus("err", "Falha na leitura");
   }
 }
-async function tick(){
-  proximaEm = Date.now() + INTERVALO_SEG*1000;
-  registrarAtualizacao();
-  const oks = await Promise.all(CARDS.map(carregar));
-  oks.every(Boolean) ? setStatus("live","Ao vivo")
-    : oks.some(Boolean) ? setStatus("err","Falha em parte dos painéis")
-    : setStatus("err","Falha na leitura");
+async function atualizarPrevisao(){
+  const estados = await Promise.all(UFS.map(uf => buscar(uf).catch(() => null)));
+  if (ultimo) desenharPrevisao(ultimo, estados);
 }
-function start(){
-  stop(); totalAtual = 0; historico = [];
-  timer = setInterval(tick, INTERVALO_SEG*1000);
-  relogio = setInterval(atualizarRelogio, 250);
-  $("toggle").textContent = "Pausar";
-  tick();
-}
-function stop(txt, kind){
-  if (timer){ clearInterval(timer); timer = null; }
-  if (relogio){ clearInterval(relogio); relogio = null; }
-  proximaEm = null; atualizarRelogio();
-  $("toggle").textContent = "Retomar";
-  if (txt) setStatus(kind || "", txt);
-}
-$("toggle").addEventListener("click", () => timer ? stop("Pausado") : start());
-
-/* ---------- Tags de estado ---------- */
-function selecionarUF(uf, empilhar){
-  UF = NOMES_UF[uf] ? uf : "br";
-  geracao++;
-  montarCards();
-  if (empilhar) history.pushState(null, "", (UF === "br" ? "/" : `/?uf=${UF}`) + location.hash);
-  if (typeof gtag === "function") gtag("event", "escolher_estado", {uf: UF});
-  start();
-}
-document.querySelector(".estados").addEventListener("click", ev => {
-  const a = ev.target.closest("[data-uf]");
-  if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey) return;
-  ev.preventDefault();
-  selecionarUF(a.dataset.uf, true);
-});
-addEventListener("popstate", () => selecionarUF(new URLSearchParams(location.search).get("uf") || "br"));
-selecionarUF(new URLSearchParams(location.search).get("uf") || "br");
+atualizar().then(atualizarPrevisao);
+setInterval(atualizar, INTERVALO_SEG * 1000);
+setInterval(atualizarPrevisao, PREVISAO_SEG * 1000);

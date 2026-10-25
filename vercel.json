@@ -21,42 +21,42 @@
   "redirects": [
     {
       "source": "/parana/",
-      "destination": "/?uf=pr",
+      "destination": "/",
       "permanent": true
     },
     {
       "source": "/curitiba/",
-      "destination": "/?uf=pr",
+      "destination": "/",
       "permanent": true
     },
     {
       "source": "/londrina/",
-      "destination": "/?uf=pr",
+      "destination": "/",
       "permanent": true
     },
     {
       "source": "/maringa/",
-      "destination": "/?uf=pr",
+      "destination": "/",
       "permanent": true
     },
     {
       "source": "/ponta-grossa/",
-      "destination": "/?uf=pr",
+      "destination": "/",
       "permanent": true
     },
     {
       "source": "/cascavel/",
-      "destination": "/?uf=pr",
+      "destination": "/",
       "permanent": true
     },
     {
       "source": "/sao-jose-dos-pinhais/",
-      "destination": "/?uf=pr",
+      "destination": "/",
       "permanent": true
     },
     {
       "source": "/foz-do-iguacu/",
-      "destination": "/?uf=pr",
+      "destination": "/",
       "permanent": true
     }
   ]
